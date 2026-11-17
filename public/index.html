@@ -228,7 +228,7 @@ footer a{font-weight:600}
     <div class="burner" id="burner"></div>
   </details>
 
-  <footer><span>Built by Somnia DevRel. DreamDEX runs on Somnia, so read the method before you trust the scoreboard.</span><a id="src" href="https://github.com/emrestay/perp-race" target="_blank" rel="noopener">Source code on GitHub ↗</a></footer>
+  <footer><span>Built by Somnia DevRel. DreamDEX runs on Somnia, so read the method before you trust the scoreboard.</span><span><a id="src" href="https://github.com/emrestay/perp-race" target="_blank" rel="noopener">Source code on GitHub ↗</a> · Horses from <a href="https://github.com/SmoothBot/chain-derby" target="_blank" rel="noopener">Chain Derby</a> (MIT)</span></footer>
   <dialog id="rep"><h3 id="repT">Reply</h3><p class="rw">The record the venue sent back for this order, exactly as received (selected fields).</p><pre id="repB"></pre><p class="rw" id="repW"></p><form method="dialog"><button class="ghost">Close</button></form></dialog>
 </main>
 
@@ -539,11 +539,24 @@ function shade(hex, f) {
 function layout(w, h) {
   const mob = w < 640, top = 58, bot = 8, LH = (h - top - bot) / VENUES.length;
   const s = Math.min(1.5, LH * (mob ? 0.95 : 1.06) / PONY_H), CW = mob ? 92 : 196, x0 = CW + 12 + (NOSE + TAIL) * s;
-  const R = mob ? 52 : 150, xf = w - R;
+  const R = mob ? 58 : 190, xf = w - R;
   return { mob, top, bot, LH, s, CW, x0, xf, R };
 }
-// A cartoon pony, facing right, drawn around the middle of its body. gait 0 = standing, 1 = full gallop.
+// Horse, track and fence art from Chain Derby by SmoothBot (https://github.com/SmoothBot/chain-derby, MIT License).
+const ART = {}; for (const [k, f] of [['horse', 'horse-sprite.webp'], ['track', 'track.webp'], ['fence', 'fence.webp']]) { const im = new Image(); im.onload = () => { ART[k] = im; }; im.src = (location.pathname.includes('/public/') ? '' : '/') + 'derby/' + f; }
+// The sprite has 6 running frames side by side. gait 0 = standing (first frame), 1 = full gallop.
 function drawPony(x, cx, cy, s, v, ph, gait, t) {
+  const im = ART.horse; if (!im) return drawPonyVector(x, cx, cy, s, v, ph, gait, t);
+  const fw = im.width / 6, fh = im.height, h = PONY_H * s * 1.12, w = h * fw / fh, frame = gait > 0.05 ? Math.floor(ph * 0.55) % 6 : 0;
+  const bob = gait > 0.05 ? 0 : -0.8 * Math.abs(Math.sin(t / 600 + v.no)) * s;
+  const left = cx + (NOSE * s) - w * 0.985, top = cy + 26 * s - h + bob; // nose and hooves line up with the vector pony
+  x.drawImage(im, frame * fw, 0, fw, fh, left, top, w, h);
+  const bx = left + w * 0.44, by = top + h * 0.6, br = h * 0.085; // venue badge on the saddle cloth
+  x.beginPath(); x.arc(bx, by, br, 0, 6.3); x.fillStyle = v.color; x.fill(); x.lineWidth = Math.max(1, br * 0.18); x.strokeStyle = '#fff'; x.stroke();
+  x.fillStyle = '#fff'; x.font = `700 ${Math.round(br * 1.05)}px ` + FONT; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(v.badge, bx, by + br * 0.06); x.textAlign = 'left';
+}
+// A cartoon pony drawn in code: used only until the sprite has loaded.
+function drawPonyVector(x, cx, cy, s, v, ph, gait, t) {
   const S = Math.sin, g = gait, OL = '#4a2c17', coat = v.coat, far = shade(coat, -0.18), light = shade(coat, 0.45), mane = v.mane;
   const bob = g > 0 ? -3.2 * g * Math.abs(S(ph)) : -0.8 * Math.abs(S(t / 600 + v.no)); // gallop bounce, or breathing
   x.save(); x.translate(cx, cy + bob * s); x.scale(s, s); x.lineJoin = 'round'; x.lineCap = 'round';
@@ -603,14 +616,18 @@ function drawTrack(t) {
   const { x, w, h } = fit(trackEl), L = layout(w, h), run = L.xf - L.x0;
   // grass strip and fence
   x.fillStyle = '#9cc96b'; x.fillRect(0, 0, w, L.top);
+  if (ART.fence) { const fh = L.top, fw = ART.fence.width * fh / ART.fence.height; for (let fx = 0; fx < w; fx += fw - 1) x.drawImage(ART.fence, fx, 0, fw, fh); } else {
   x.fillStyle = '#8bbb5b'; for (let gx = 0; gx < w; gx += 22) { x.beginPath(); x.ellipse(gx + 8, L.top - 4, 9, 4, 0, 0, 6.3); x.fill(); }
   x.fillStyle = '#fffaf0'; x.strokeStyle = 'rgba(74,44,23,.25)'; x.lineWidth = 1;
   rr(x, 0, 14, w, 7, 3.5); x.fill(); rr(x, 0, 30, w, 7, 3.5); x.fill();
   for (let px = 26; px < w; px += 88) { rr(x, px, 8, 11, 44, 5); x.fill(); x.stroke(); }
+  }
   // dirt lanes
   x.fillStyle = '#e2b07a'; x.fillRect(0, L.top, w, h - L.top);
+  if (ART.track) { const th = L.LH, tw = ART.track.width * th / ART.track.height; for (let i = 0; i < VENUES.length; i++) for (let tx = 0; tx < w; tx += tw - 1) x.drawImage(ART.track, tx, L.top + i * L.LH, tw, th); } else {
   x.fillStyle = 'rgba(160,100,50,.16)'; for (const [a, b] of SPECK) { x.beginPath(); x.ellipse(L.CW + a * (w - L.CW), L.top + 6 + b * (h - L.top - 12), 2.4, 1.4, 0, 0, 6.3); x.fill(); }
   for (let i = 0; i <= VENUES.length; i++) { const y = L.top + i * L.LH; x.fillStyle = 'rgba(255,248,232,.9)'; x.fillRect(0, y - 1.5, w, 3); }
+  }
   // finish line, checkered
   const sq = 6; for (let y = L.top, k = 0; y < h - L.bot; y += sq, k++) { x.fillStyle = k % 2 ? '#3b2a1e' : '#fff'; x.fillRect(L.xf - sq, y, sq, sq); x.fillStyle = k % 2 ? '#fff' : '#3b2a1e'; x.fillRect(L.xf, y, sq, sq); }
   // finish flag on the grass
@@ -635,7 +652,7 @@ function drawTrack(t) {
         nose = L.x0 + run * Math.min(1, ms / Math.max(1, r.conf)); gait = ms > 0 ? 1 : 0; status = ms > 0 ? 'running...' : 'in the gate';
         if (ms >= r.conf) {
           if (rp.fin[v.id] == null) { rp.fin[v.id] = t; if (rd.rank[v.id] === 1) rp.flashAt = t; }
-          const d = t - rp.fin[v.id]; nose = L.xf + L.R * 0.78 * (1 - Math.exp(-d / 260)); gait = Math.exp(-d / 520);
+          const d = t - rp.fin[v.id]; nose = Math.min(w - 6, L.xf + L.R * 0.72) * (1 - Math.exp(-d / 260)) + L.xf * Math.exp(-d / 260); gait = Math.exp(-d / 520);
           place = rd.rank[v.id]; status = RANK[place] + ' · ' + fms(r.conf); scol = place === 1 ? '#c98a00' : '#3b2a1e';
         }
       } else { // answered, but never reported a final state: did not finish

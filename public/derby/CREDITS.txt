@@ -1,0 +1,4 @@
+horse-sprite.webp, track.webp and fence.webp are resized from the art of Chain Derby
+by SmoothBot: https://github.com/SmoothBot/chain-derby (packages/app/public:
+horse_sprite.png, track.png, and the lower part of top.png without the logo).
+Chain Derby is published under the MIT License (stated in its README).

@@ -1,6 +1,6 @@
 # Perp Race
 
-A latency derby for perp DEXs, drawn as a pony race. Pick a crypto perp, go long or short, and one real order leaves for every venue at the same instant. Every venue runs on mainnet. The first venue to confirm the order crosses the line.
+A latency derby for perp DEXs, run as a horse race. Pick a crypto perp, go long or short, and one real order leaves for every venue at the same instant. Every venue runs on mainnet. The first venue to confirm the order crosses the line.
 
 Live: https://perp-horse-race.vercel.app
 Code: https://github.com/emrestay/perp-race
@@ -82,3 +82,5 @@ vercel deploy
 ## License
 
 MIT, see `LICENSE`.
+
+The horse, track and fence art in `public/derby/` comes from [Chain Derby](https://github.com/SmoothBot/chain-derby) by SmoothBot (MIT); see `public/derby/CREDITS.txt`.

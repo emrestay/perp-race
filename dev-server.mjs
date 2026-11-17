@@ -53,6 +53,8 @@ http.createServer(async (req, res) => {
       }
       res.writeHead(r.status, Object.fromEntries(r.headers)); res.end(text); return;
     }
+    const art = url.pathname.match(/^\/derby\/([a-z-]+\.webp)$/); // the race art
+    if (art) { res.writeHead(200, { 'content-type': 'image/webp', 'cache-control': 'max-age=3600' }); res.end(await readFile(path.join(ROOT, 'public', 'derby', art[1]))); return; }
     const f = STATIC[url.pathname];
     if (!f) { res.writeHead(404); res.end('not found'); return; }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }); res.end(await readFile(path.join(ROOT, f)));
