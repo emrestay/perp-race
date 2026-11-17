@@ -6,6 +6,7 @@ import { signL1, hlPrice, hlSize } from '../lib/hyperliquid.js';
 import { arcusKey, arcusSign, placePayload, cancelPayload } from '../lib/arcus.js';
 import { msgpack } from '../lib/util.js';
 import { packOrder, placeHash, risexPermit, risexCred } from '../lib/risex.js';
+import { perplCred, signInFrame } from '../lib/perpl.js';
 import { keccak256, toBytes, recoverTypedDataAddress, getAddress } from 'viem';
 
 let fails = 0; const ok = (name, cond, extra = '') => { console.log((cond ? 'PASS ' : 'FAIL ') + name + (extra ? '  ' + extra : '')); if (!cond) fails++; };
@@ -22,6 +23,15 @@ const hex = u => Buffer.from(u).toString('hex');
   const rec = await recoverTypedDataAddress({ domain, primaryType: 'VerifyWitness', signature: '0x' + raw.toString('hex'), message: { account: cred.account, target: router, hash: h, nonceAnchor: 5n, nonceBitmap: 3, deadline: pm.deadline },
     types: { VerifyWitness: [{ name: 'account', type: 'address' }, { name: 'target', type: 'address' }, { name: 'hash', type: 'bytes32' }, { name: 'nonceAnchor', type: 'uint48' }, { name: 'nonceBitmap', type: 'uint8' }, { name: 'deadline', type: 'uint32' }] } });
   ok('risex permit: base64, 65 bytes, recovers to the session key', raw.length === 65 && rec === cred.signer.address && pm.nonce_anchor === '5' && pm.nonce_bitmap_index === 3);
+}
+
+// Perpl: WebSocket sign-in, checked against docs.perpl.xyz (four fields joined by newlines, Ed25519, base64url)
+{
+  const { privateKey: pk } = generateKeyPairSync('ed25519'), raw = pk.export({ format: 'der', type: 'pkcs8' }).subarray(-32).toString('hex');
+  const { cred } = perplCred({ PERPL_API_KEY: 'tok', PERPL_API_KEY_SECRET: raw }), f = signInFrame(cred, '1751932800000', '9Nq0Yp3kZ2c1aVb7');
+  const ok2 = verify(null, Buffer.from(['143', 'trading-ws-signin', '1751932800000', '9Nq0Yp3kZ2c1aVb7'].join('\n')), createPublicKey(cred.key), Buffer.from(f.signature, 'base64url'));
+  ok('perpl sign-in frame verifies', f.mt === 29 && f.chain_id === 143 && f.api_key === 'tok' && !/[=+/]/.test(f.signature) && ok2);
+  ok('perpl credential check', !!perplCred({ PERPL_API_KEY: 'x', PERPL_API_KEY_SECRET: 'abc' }).credError && perplCred({}).cred === null);
 }
 
 // msgpack: hand-checked encodings

@@ -14,7 +14,7 @@ if ! command -v vercel >/dev/null 2>&1; then
 fi
 command -v vercel >/dev/null 2>&1 || { echo "Vercel CLI not found. Install it with: npm i -g vercel"; exit 1; }
 vercel whoami >/dev/null 2>&1 || { echo "Vercel CLI is not logged in. Run: vercel login"; exit 1; }
-for n in DREAMDEX_KEY HL_AGENT_KEY ARCUS_API_SECRET ARCUS_ADDRESS ARCUS_ACCOUNT_INDEX LIGHTER_API_PRIVATE_KEY LIGHTER_ACCOUNT_INDEX LIGHTER_API_KEY_INDEX ASTER_SIGNER_KEY RISEX_ACCOUNT RISEX_SIGNER_KEY; do
+for n in DREAMDEX_KEY HL_AGENT_KEY ARCUS_API_SECRET ARCUS_ADDRESS ARCUS_ACCOUNT_INDEX LIGHTER_API_PRIVATE_KEY LIGHTER_ACCOUNT_INDEX LIGHTER_API_KEY_INDEX ASTER_SIGNER_KEY RISEX_ACCOUNT RISEX_SIGNER_KEY PERPL_API_KEY PERPL_API_KEY_SECRET; do
   v=$(security find-generic-password -s perp-race -a "$n" -w 2>/dev/null) || { echo "skip    $n (not in Keychain)"; continue; }
   vercel env rm "$n" "$TARGET" --yes >/dev/null 2>&1
   # Preview needs an explicit empty Git branch argument, which means "all preview branches".
@@ -24,4 +24,4 @@ for n in DREAMDEX_KEY HL_AGENT_KEY ARCUS_API_SECRET ARCUS_ADDRESS ARCUS_ACCOUNT_
   else echo "FAILED  $n (exit $rc)"; printf '%s\n' "${out//$v/[value hidden]}" | tail -6 | sed 's/^/        /'; fi
 done
 echo "done. Names now on Vercel ($TARGET):"
-vercel env ls "$TARGET" 2>/dev/null | awk '$1 ~ /^(DREAMDEX|HL_|ARCUS|LIGHTER|ASTER|RISEX)/ {print "  " $1 "  " $2}'
+vercel env ls "$TARGET" 2>/dev/null | awk '$1 ~ /^(DREAMDEX|HL_|ARCUS|LIGHTER|ASTER|RISEX|PERPL)/ {print "  " $1 "  " $2}'

@@ -66,7 +66,7 @@ main{max-width:1160px;margin:0 auto;padding:0 16px 70px}
 .call{flex:1;min-width:200px;text-align:right;font:700 16px var(--font);color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.18);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .call.live{animation:blink 1s infinite}
 @keyframes blink{50%{opacity:.45}}
-#track{display:block;width:100%;height:540px}
+#track{display:block;width:100%;height:600px}
 .cfoot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#fff;font:500 14px var(--font);padding:8px 16px 0;text-shadow:0 1px 0 rgba(0,0,0,.15)}
 /* result */
 #verdict{margin-top:18px}
@@ -142,7 +142,7 @@ dialog pre{background:#f1ebe0;border-radius:12px;padding:12px;font:12.5px/1.5 va
 footer{margin-top:30px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--mute);font-size:15px}
 footer a{font-weight:600}
 @media (max-width:900px){.hero,.grid2{grid-template-columns:1fr}.board li{grid-template-columns:44px 1fr auto;row-gap:4px}.board .mg{display:none}.board .tg{grid-column:2}.board .pf{grid-column:2/-1}}
-@media (max-width:640px){#track{height:480px}.call{text-align:left}}
+@media (max-width:640px){#track{height:540px}.call{text-align:left}}
 </style>
 </head>
 <body>
@@ -247,14 +247,14 @@ const LIGHTER_DOC_MS = 300; // docs.lighter.xyz/trading/trading-fees: taker late
 let server = null; // set when this page is served with its /api (real orders, measured from the server)
 
 const STOCKS = { // crypto perps listed on DreamDEX mainnet and on every other venue (see lib/markets.js)
-  BTC: { pool: '0x143ebd385cc90bd178086a8f432c9084f889ef30', hl: 'BTC', arcus: 'BTC-USD', aster: 'btcusdt', lighter: 1, risex: 1 },
-  ETH: { pool: '0x440992f9910d635201209deb679f8f0c57a6a758', hl: 'ETH', arcus: 'ETH-USD', aster: 'ethusdt', lighter: 0, risex: 2 },
-  SOL: { pool: '0x8508a90867806d2118277372d704b97efde055b3', hl: 'SOL', arcus: 'SOL-USD', aster: 'solusdt', lighter: 2, risex: 4 },
-  HYPE: { pool: '0x81151ad4cdf422fd660a04accb6693c0486e6ccf', hl: 'HYPE', arcus: 'HYPE-USD', aster: 'hypeusdt', lighter: 24, risex: 5 },
-  XRP: { pool: '0x4ac6ac5824cf9de6dfa67d37b431c5d8016360a7', hl: 'XRP', arcus: 'XRP-USD', aster: 'xrpusdt', lighter: 7, risex: 6 },
-  DOGE: { pool: '0x6441273abb267b06e88a62b06e3b2995aade65ee', hl: 'DOGE', arcus: 'DOGE-USD', aster: 'dogeusdt', lighter: 3, risex: 14 },
-  BNB: { pool: '0x86818cc4e82013eab08c9dac6573ddf27a8cab6b', hl: 'BNB', arcus: 'BNB-USD', aster: 'bnbusdt', lighter: 25, risex: 3 },
-  ZEC: { pool: '0xfc0f39f888d6d4f56848786cb494ca8c74213b94', hl: 'ZEC', arcus: 'ZEC-USD', aster: 'zecusdt', lighter: 90, risex: 8 },
+  BTC: { pool: '0x143ebd385cc90bd178086a8f432c9084f889ef30', hl: 'BTC', arcus: 'BTC-USD', aster: 'btcusdt', lighter: 1, risex: 1, perpl: [1, 1] },
+  ETH: { pool: '0x440992f9910d635201209deb679f8f0c57a6a758', hl: 'ETH', arcus: 'ETH-USD', aster: 'ethusdt', lighter: 0, risex: 2, perpl: [20, 2] },
+  SOL: { pool: '0x8508a90867806d2118277372d704b97efde055b3', hl: 'SOL', arcus: 'SOL-USD', aster: 'solusdt', lighter: 2, risex: 4, perpl: [31, 3] },
+  HYPE: { pool: '0x81151ad4cdf422fd660a04accb6693c0486e6ccf', hl: 'HYPE', arcus: 'HYPE-USD', aster: 'hypeusdt', lighter: 24, risex: 5, perpl: [40, 4] },
+  XRP: { pool: '0x4ac6ac5824cf9de6dfa67d37b431c5d8016360a7', hl: 'XRP', arcus: 'XRP-USD', aster: 'xrpusdt', lighter: 7, risex: 6, perpl: null },
+  DOGE: { pool: '0x6441273abb267b06e88a62b06e3b2995aade65ee', hl: 'DOGE', arcus: 'DOGE-USD', aster: 'dogeusdt', lighter: 3, risex: 14, perpl: null },
+  BNB: { pool: '0x86818cc4e82013eab08c9dac6573ddf27a8cab6b', hl: 'BNB', arcus: 'BNB-USD', aster: 'bnbusdt', lighter: 25, risex: 3, perpl: null },
+  ZEC: { pool: '0xfc0f39f888d6d4f56848786cb494ca8c74213b94', hl: 'ZEC', arcus: 'ZEC-USD', aster: 'zecusdt', lighter: 90, risex: 8, perpl: [50, 2] },
 };
 let stock = 'BTC';
 
@@ -274,6 +274,8 @@ const VENUES = [
     m: ['A real order on mainnet', "Aster replies with the order's final state", "Aster's own reply. Aster has no public record of a single order"] },
   { id: 'risex', name: 'RISEx', short: 'RISEx', badge: 'R', sub: 'RISE Chain mainnet', color: '#1fa6c9', coat: '#b8b2aa', mane: '#4b4540', kind: 'api', make: risex, ws: 'wss://ws.rise.trade/ws',
     m: ['A real order on mainnet, signed by an API wallet (session key)', 'RISEx replies after the order transaction has executed, with its result', 'The transaction, on the RISE explorer'] },
+  { id: 'perpl', name: 'Perpl', short: 'Perpl', badge: 'P', sub: 'Monad mainnet', color: '#6e54ff', coat: '#c98b5a', mane: '#5b3a22', kind: 'api', make: perpl, ws: 'wss://app.perpl.xyz/ws/v1/market-data',
+    m: ['A real order on Monad mainnet, sent over the trading socket with an API key. Not every market is listed', 'Perpl reports the order finished (canceled or expired) on the order stream', 'The transaction, on Monadscan'] },
 ];
 
 /* ---------- helpers ---------- */
@@ -436,7 +438,12 @@ function risex(v) {
   function sub() { const id = STOCKS[stock].risex; if (cur === id) return; if (id == null) { cur = id; return; } if (s.send({ method: 'subscribe', params: { channel: 'oracle', market_ids: [id] } })) cur = id; }
   v.ping = P.ping; v.setStock = sub;
 }
-const listed = v => v.id !== 'risex' || STOCKS[stock].risex != null;
+function perpl(v) {
+  // Perpl refuses connections from other web origins, so the browser has no feed or ping for it: the race
+  // server measures it. Without our server (plain local page) the lane is left out.
+  v.serverOnly = true; v.ping = async () => { throw new Error('measured by the server only'); };
+}
+const listed = v => !(v.id in STOCKS[stock]) || STOCKS[stock][v.id] != null;
 
 /* ---------- DOM ---------- */
 const tote = $('#tote'), tbody = $('#tbody'), chips = $('#chips'), callEl = $('#call');
@@ -501,7 +508,7 @@ async function sample(v) {
   try { const t = await v.ping(); if (v.warm) { v.rtts.push(t); if (v.rtts.length > 12) v.rtts.shift(); } v.warm = true; v.err = null; }
   catch (e) { v.err = e.message; }
 }
-function sampleAll() { if (document.hidden || racing) return; VENUES.forEach((v, i) => setTimeout(() => { if (!racing) sample(v); }, i * 110)); }
+function sampleAll() { if (document.hidden || racing) return; VENUES.forEach((v, i) => { if (!v.serverOnly) setTimeout(() => { if (!racing) sample(v); }, i * 110); }); }
 setTimeout(sampleAll, 700); setTimeout(sampleAll, 1900); setInterval(sampleAll, 3000);
 
 function paintText() {
@@ -515,7 +522,7 @@ function paintText() {
     v.row[3].textContent = v.hist.conf.length ? v.wins : '·';
     v.row[4].textContent = n ? tagOf({ basis: v.lastBasis, kind: v.lastKind })[1] : '·';
   }
-  const live = VENUES.filter(v => v.warm && !v.err).length;
+  const live = VENUES.filter(v => (v.warm && !v.err) || (v.serverOnly && server)).length;
   const pl = $('#pLive'); pl.innerHTML = `<b>${live}/${VENUES.length}</b> venues live`; pl.classList.toggle('on', live === VENUES.length);
   if (!round && !racing) $('#note').textContent = live < VENUES.length ? `Warming up connections: ${live}/${VENUES.length} ready` : 'Ready. Pick a side.';
 }
@@ -644,7 +651,7 @@ function drawTrack(t) {
     const y = L.top + i * L.LH, cy = y + L.LH / 2 + 6 * L.s, r = rd ? rd.res[v.id] : null;
     let nose = L.x0, gait = 0, place = 0, status = null, scol = '#8a7563';
     if (!listed(v) && !(rp && r && !r.unlisted)) status = 'not listed for ' + stock;
-    else if (!rp) { status = racing ? 'on its way...' : v.warm && !v.err ? 'ready' : v.err ? 'unreachable' : 'warming up'; if (racing) nose = L.x0 + Math.sin(t / 90 + i * 2) * 1.5; }
+    else if (!rp) { status = racing ? 'on its way...' : (v.warm && !v.err) || (v.serverOnly && server) ? 'ready' : v.err ? 'unreachable' : 'warming up'; if (racing) nose = L.x0 + Math.sin(t / 90 + i * 2) * 1.5; }
     else if (r) {
       if (r.unlisted) status = 'not listed for ' + rd.stock;
       else if (r.api == null) status = 'no answer';
@@ -680,7 +687,7 @@ function drawTrack(t) {
 function callFor(t, ms) {
   const rp = replay;
   if (racing && !rp) return setCall("They're in the gate · orders on their way", true);
-  if (!rp) { const live = VENUES.filter(v => v.warm && !v.err).length; return setCall(live < VENUES.length ? 'The ponies are warming up' : 'Pick a stock and a side to start the race', false); }
+  if (!rp) { const live = VENUES.filter(v => (v.warm && !v.err) || (v.serverOnly && server)).length; return setCall(live < VENUES.length ? 'The ponies are warming up' : 'Pick a stock and a side to start the race', false); }
   const rd = rp.rd;
   if (t - rp.start < rp.pre) return setCall('Gates open...', true);
   const done = VENUES.filter(v => rd.res[v.id].conf != null && ms >= rd.res[v.id].conf).sort((a, b) => rd.res[a.id].conf - rd.res[b.id].conf);
@@ -801,7 +808,7 @@ function lock(on) { for (const b of document.querySelectorAll('.fire,.ghost')) b
 let lastSide = 'short';
 async function waitQuotes(maxMs) {
   const end = now() + maxMs;
-  while (now() < end && VENUES.some(v => listed(v) && !v.px.a.length)) await sleep(100);
+  while (now() < end && VENUES.some(v => listed(v) && !v.serverOnly && !v.px.a.length)) await sleep(100);
 }
 function startReplay(rd) {
   const confs = VENUES.map(v => rd.res[v.id].conf).filter(c => c != null), apis = VENUES.map(v => rd.res[v.id].api).filter(c => c != null);
@@ -832,16 +839,19 @@ async function paintServerWallet() {
   let bal = null; try { bal = Number(BigInt(await dream.rpc('eth_getBalance', [a, 'latest'])) / 10n ** 12n) / 1e6; } catch {}
   el.innerHTML = `<b>DreamDEX real transactions: ${bal == null ? 'checking...' : bal > 0.01 ? 'ON' : 'OFF (wallet is empty)'}.</b> In this mode they are sent by our server, not by your browser, from a Somnia Tokyo testnet wallet.<br>Address: <b class="num">${a}</b>${bal == null ? '' : ` · Balance: <b class="num">${bal} STT</b>`}`;
 }
+function dropVenues(test) {
+  for (let i = VENUES.length - 1; i >= 0; i--) { const v = VENUES[i]; if (!test(v)) continue; VENUES.splice(i, 1); for (const el of [v.lg.parentNode, v.row[0].parentNode]) el.remove(); const m = [...document.querySelectorAll('#method tr')].find(r => r.firstChild.textContent === v.name); if (m) m.remove(); }
+}
 fetch('/api/health', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(h => {
-  if (!h || !h.ok) { initBurner(); return; }
+  if (!h || !h.ok) { dropVenues(v => v.serverOnly); initBurner(); return; }
   server = h;
   // A venue the server has no credentials for would only ever show 'did not finish': leave it out of the race.
-  for (let i = VENUES.length - 1; i >= 0; i--) { const v = VENUES[i], sv = h.venues && h.venues[v.id]; if (v.id !== 'dreamdex' && sv && sv.realOrders === false) { VENUES.splice(i, 1); for (const el of [v.lg.parentNode, v.row[0].parentNode]) el.remove(); const m = [...document.querySelectorAll('#method tr')].find(r => r.firstChild.textContent === v.name); if (m) m.remove(); } }
+  dropVenues(v => { const sv = h.venues && h.venues[v.id]; return v.id !== 'dreamdex' && (!sv || sv.realOrders === false); });
   { const n = VENUES.length; $('#pLive').innerHTML = `<b>·/${n}</b> venues live`; }
   const p = $('#pReal'); p.textContent = 'real orders · measured from ' + h.region; p.classList.add('on');
   $('#kick').textContent = 'Crypto perps · real orders on mainnet · measured from Tokyo';
   setTimeout(paintServerWallet, 2500); setInterval(() => { if (!document.hidden && !racing) paintServerWallet(); }, 20000);
-}).catch(() => initBurner());
+}).catch(() => { dropVenues(v => v.serverOnly); initBurner(); });
 window.__race = { VENUES, V, go, burner, realTx, get round() { return round; } };
 </script>
 </body>

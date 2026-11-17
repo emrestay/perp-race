@@ -22,6 +22,7 @@ The code is open so that anyone can check what is measured and run it themselves
 | Lighter | mainnet | IOC order via REST `sendTx` | final order state on the `account_all_orders` stream | the transaction on Lighter's public API (`/api/v1/tx?by=hash`), kept for a few minutes only |
 | Aster | mainnet | IOC order via REST `/fapi/v3/order` | the REST response with the final status | Aster's own reply (no public record of a single order) |
 | RISEx | RISE Chain mainnet | IOC order via REST `/v1/orders/place`, signed with an EIP-712 permit by a session key (post-only limit, cancelled after, on post-only markets) | the REST response after the order transaction executed | tx on the RISE explorer |
+| Perpl | Monad mainnet | IOC order as an `OrderRequest` frame on the trading WebSocket, signed in with an Ed25519 API key | the `OrdersUpdate` that reports the order finished | tx on Monadscan |
 
 The results board also shows each venue's own reply for its order (a "reply" button).
 
@@ -29,7 +30,7 @@ Each round also times one small request on the same open connection (the "networ
 
 Known differences, stated on the page as well:
 
-- Markets: BTC, ETH, SOL, HYPE, XRP, DOGE, BNB, ZEC, the crypto perps DreamDEX lists on mainnet that every other venue lists too (`lib/markets.js`).
+- Markets: BTC, ETH, SOL, HYPE, XRP, DOGE, BNB, ZEC, the crypto perps DreamDEX lists on mainnet that the other venues list too (`lib/markets.js`). Perpl does not list XRP, DOGE or BNB; on those markets it sits the race out. Perpl refuses browser connections from other sites, so its lane exists only when the page runs with the race server.
 - The DreamDEX leg is a resting limit order (an IOC order with nothing to match reverts on chain); the other venues get IOC orders. All are priced away from the market: 3% (1.5% on Aster and RISEx, inside their price bands).
 - Order sizes are near each venue's minimum, mostly 6 to 19 USD; a computed size above 80 USD is refused (`MAX_NOTIONAL_USD`). A venue without credentials on the server is left out of the race.
 - The accounts are small, fresh accounts on public APIs. Lighter standard accounts carry a published 300 ms taker delay.

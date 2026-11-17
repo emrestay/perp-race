@@ -5,6 +5,7 @@ import { arcusCred } from '../lib/arcus.js';
 import { lighterCred, loadSigner } from '../lib/lighter.js';
 import { asterSigner, asterBalance } from '../lib/aster.js';
 import { risexCred } from '../lib/risex.js';
+import { perplCred } from '../lib/perpl.js';
 
 // ?deep=1: ask RISEx whether the session key is registered and active for the account (a read, never an order).
 async function risexDeep(c) {
@@ -28,7 +29,7 @@ async function lighterDeep(cred) {
 }
 
 export async function GET(request) {
-  const env = process.env, b = burner(env), agent = agentOf(env), ar = arcusCred(env), li = lighterCred(env), as = asterSigner(env), rx = risexCred(env);
+  const env = process.env, b = burner(env), agent = agentOf(env), ar = arcusCred(env), li = lighterCred(env), as = asterSigner(env), rx = risexCred(env), pp = perplCred(env);
   const body = {
     ok: true, region: env.VERCEL_REGION || 'local',
     venues: {
@@ -38,13 +39,14 @@ export async function GET(request) {
       lighter: { realOrders: !!li.cred, accountIndex: li.cred ? li.cred.ai : null, apiKeyIndex: li.cred ? li.cred.ki : null, keyError: li.credError, network: 'mainnet' },
       aster: { realOrders: !!as, signer: as ? as.address : null, keyError: env.ASTER_SIGNER_KEY && !as ? 'ASTER_SIGNER_KEY is not a valid private key' : null, network: 'mainnet' },
       risex: { realOrders: !!rx, account: rx ? rx.account : null, signer: rx ? rx.signer.address : null, keyError: (env.RISEX_SIGNER_KEY || env.RISEX_ACCOUNT) && !rx ? 'RISEX_SIGNER_KEY and RISEX_ACCOUNT are both required' : null, network: 'mainnet' },
+      perpl: { realOrders: !!pp.cred, keyError: pp.credError, network: 'Monad mainnet' },
     },
   };
   // On the public production site this endpoint says only what the page needs: no account identifiers,
   // no balances and no signed checks.
   if (env.VERCEL_ENV === 'production') {
     const pub = { ok: true, region: body.region, venues: { dreamdex: { network: body.venues.dreamdex.network, burner: body.venues.dreamdex.burner } } };
-    for (const k of ['hyperliquid', 'arcus', 'lighter', 'aster', 'risex']) pub.venues[k] = { realOrders: body.venues[k].realOrders };
+    for (const k of ['hyperliquid', 'arcus', 'lighter', 'aster', 'risex', 'perpl']) pub.venues[k] = { realOrders: body.venues[k].realOrders };
     return new Response(JSON.stringify(pub), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
   }
   const deep = request && new URL(request.url).searchParams.get('deep') === '1';
