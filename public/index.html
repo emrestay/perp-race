@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perp Race · Here we go again</title>
+<meta name="description" content="Five perp DEXs, one real order each, fired at the same instant. First to confirm wins. Open source, check every result yourself.">
+<meta property="og:title" content="Perp Race · Here we go again">
+<meta property="og:description" content="Five perp DEXs, one real order each, fired at the same instant. First to confirm wins.">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,900&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+ --green:#0f3d2e;--green2:#165440;--green3:#0a2c21;--gold:#c9a24b;--gold2:#e6c97a;--red:#b5272e;--paper:#f6f0e1;--card:#fffbf2;--ink:#1d1912;--mute:#6f6655;--line:#dfd3b8;
+ --long:#1f7a46;--short:#b5272e;--led:#ffb43b;
+ --serif:"Playfair Display",Georgia,"Times New Roman",serif;--cond:"Barlow Condensed","Arial Narrow",ui-sans-serif,system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{color:var(--ink);font:16px/1.5 var(--cond);background:var(--paper);-webkit-font-smoothing:antialiased;
+ background-image:radial-gradient(1200px 500px at 50% -200px,rgba(201,162,75,.18),transparent 70%),repeating-linear-gradient(0deg,rgba(0,0,0,.012) 0 2px,transparent 2px 4px)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+a{color:var(--green2)}
+/* top bar */
+.bar{background:var(--green);color:var(--paper);border-bottom:3px solid var(--gold)}
+.bar .in{max-width:1160px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font:900 20px var(--serif);letter-spacing:.02em}
+.logo svg{flex:none}
+.logo small{font:600 12px var(--cond);letter-spacing:.22em;color:var(--gold2);text-transform:uppercase;margin-left:4px}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{font:600 12px var(--cond);letter-spacing:.12em;text-transform:uppercase;padding:4px 10px;border:1px solid rgba(230,201,122,.45);border-radius:3px;color:#d9ceb1}
+.pill b{color:#fff}.pill.on{border-color:var(--gold2);color:var(--gold2)}
+main{max-width:1160px;margin:0 auto;padding:22px 16px 70px}
+/* hero */
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:30px;align-items:center;margin:8px 0 26px}
+.kicker{font:700 13px var(--cond);letter-spacing:.26em;text-transform:uppercase;color:var(--red);display:flex;align-items:center;gap:10px}
+.kicker:before{content:"";width:28px;height:2px;background:var(--red)}
+h1{font:900 clamp(54px,9vw,108px)/.9 var(--serif);letter-spacing:-.02em;margin:14px 0 16px;color:var(--green)}
+h1 em{font-style:italic;color:var(--red)}
+.lede{font-size:19px;line-height:1.4;max-width:540px;margin:0;color:#3b352a}
+.lede b{color:var(--green)}
+/* race card (order ticket) */
+.racecard{background:var(--card);border:2px solid var(--green);border-radius:6px;box-shadow:6px 6px 0 var(--gold);position:relative}
+.rc-head{background:var(--green);color:var(--paper);padding:8px 14px;display:flex;justify-content:space-between;align-items:baseline;font:700 13px var(--cond);letter-spacing:.2em;text-transform:uppercase}
+.rc-head span:last-child{color:var(--gold2)}
+.rc-body{padding:14px}
+.lbl{display:block;font:700 11.5px var(--cond);letter-spacing:.18em;text-transform:uppercase;color:var(--mute);margin-bottom:6px}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
+.chip{font:700 15px var(--cond);letter-spacing:.06em;padding:7px 4px;border-radius:3px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+.chip.on{background:var(--green);border-color:var(--green);color:var(--gold2)}
+.pxrow{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px;padding-top:12px;border-top:1px dashed var(--line)}
+#px{font:700 34px/1 var(--mono);color:var(--green)}
+input[type=number]{width:92px;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:3px;padding:8px 10px;font:700 16px var(--mono)}
+.btns{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}
+button{cursor:pointer;border:0;font-family:var(--cond)}
+.fire{border-radius:4px;padding:13px 10px;font:700 20px var(--cond);letter-spacing:.14em;text-transform:uppercase;color:#fff;transition:transform .06s,filter .15s,opacity .15s;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.fire:hover{filter:brightness(1.08)}
+.fire:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.fire:disabled,.ghost:disabled{opacity:.4;cursor:default}
+.long{background:var(--long)}.short{background:var(--short)}
+.ghost{background:transparent;color:var(--green);border:2px solid var(--green);border-radius:4px;padding:0 12px;font:700 15px var(--cond);letter-spacing:.08em}
+#note{margin-top:10px;color:var(--mute);font:500 13px var(--mono);min-height:19px}
+/* track */
+.course{background:var(--green);border-radius:8px;padding:10px;box-shadow:0 18px 40px rgba(15,61,46,.25);border:3px solid var(--gold)}
+.chead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:var(--paper);padding:2px 6px 10px}
+.chead h2{margin:0;font:900 22px var(--serif);letter-spacing:.01em}
+.chead h2 span{color:var(--gold2);font-style:italic}
+.call{flex:1;min-width:220px;text-align:right;font:700 15px var(--cond);letter-spacing:.14em;text-transform:uppercase;color:var(--gold2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.call.live{animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.4}}
+#track{display:block;width:100%;height:392px;border-radius:4px}
+.cfoot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#cfc4a6;font:500 12.5px var(--cond);letter-spacing:.06em;padding:8px 6px 0}
+/* official result */
+#verdict{margin-top:18px}
+.wait{font:700 14px var(--cond);letter-spacing:.24em;text-transform:uppercase;color:var(--mute);padding:14px 4px;animation:blink 1.1s infinite}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.result{background:var(--green3);color:var(--paper);border-radius:6px;border:3px solid var(--gold);overflow:hidden;animation:rise .5s cubic-bezier(.2,.8,.2,1) both;position:relative}
+.rhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:2px solid rgba(201,162,75,.5)}
+.rhead .t{font:900 24px var(--serif)}
+.rhead .t em{color:var(--gold2)}
+.stamp{font:700 14px var(--cond);letter-spacing:.3em;color:var(--green3);background:var(--gold2);padding:4px 10px;border-radius:3px;transform:rotate(-3deg);box-shadow:0 2px 0 rgba(0,0,0,.3)}
+.winner{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:14px 16px 6px}
+.winner .nm{font:900 clamp(32px,5.4vw,58px)/1 var(--serif)}
+.winner .tm{font:700 clamp(28px,4.6vw,48px)/1 var(--mono);color:var(--led);text-shadow:0 0 18px rgba(255,180,59,.45)}
+.winner .tm small{font-size:.45em;color:#d8ccaa;text-shadow:none;margin-left:4px}
+.board{list-style:none;margin:6px 0 0;padding:0 8px 10px}
+.board li{display:grid;grid-template-columns:44px 20px minmax(110px,1fr) minmax(90px,.7fr) minmax(80px,.6fr) minmax(120px,.9fr) minmax(150px,1.2fr);gap:12px;align-items:center;padding:9px 8px;border-top:1px solid rgba(255,255,255,.08);animation:rise .45s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d)}
+.pos{font:900 20px var(--serif);color:#d8ccaa}
+.board li.first .pos{color:var(--gold2)}
+.silk{width:18px;height:18px;border-radius:3px;background:var(--c);box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
+.hn{font:700 18px var(--cond);letter-spacing:.04em}
+.hn small{display:block;font:500 12px var(--cond);color:#bfb393;letter-spacing:.06em}
+.rt{font:700 17px var(--mono);color:#fff}
+.mg{font:500 13px var(--mono);color:#bfb393}
+.tg{justify-self:start;font:700 11.5px var(--cond);letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;border-radius:3px;border:1px solid rgba(255,255,255,.25);color:#d8ccaa;white-space:nowrap}
+.tg.real{color:#8ee0a8;border-color:rgba(142,224,168,.5)}
+.pf{font:500 12.5px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pf a{color:var(--gold2)}
+.pf.dim{color:#8f8670}
+.rfoot{margin:0;padding:8px 16px 12px;color:#bfb393;font-size:13.5px}
+/* sections */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.ptitle{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 10px;font:900 22px var(--serif);color:var(--green)}
+.ptitle small{font:700 12px var(--cond);letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.tote{background:#111;border-radius:4px;padding:6px 10px;border:2px solid #2b2b2b;box-shadow:inset 0 0 24px rgba(0,0,0,.8)}
+.tote div{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:6px 0;border-bottom:1px dashed #2c2c2c}
+.tote div:last-child{border-bottom:0}
+.tote i{width:14px;height:14px;border-radius:2px}
+.tote span{color:#d9d2c0;font:600 15px var(--cond);letter-spacing:.1em;text-transform:uppercase}
+.tote b{font:700 18px var(--mono);color:var(--led);text-shadow:0 0 10px rgba(255,180,59,.5);transition:color .3s}
+.tote b.tick{color:#fff}
+.rules{counter-reset:r;list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.rules li{counter-increment:r;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start}
+.rules li:before{content:counter(r);display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--green);color:var(--gold2);font:900 15px var(--serif)}
+.rules b{display:block;font:700 17px var(--cond);letter-spacing:.04em}
+.rules p{margin:0;color:#4a4335;font-size:15px;line-height:1.35}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+th{font:700 12px var(--cond);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+th:first-child,td:first-child{text-align:left}
+td i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:8px;vertical-align:-1px}
+td.basis{color:var(--mute);white-space:normal;text-align:left}
+table.m td,table.m th{text-align:left;white-space:normal;vertical-align:top}
+details{margin-top:18px}
+summary{cursor:pointer;font:900 22px var(--serif);color:var(--green);list-style:none;display:flex;align-items:center;gap:10px}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"+";display:grid;place-items:center;width:26px;height:26px;border-radius:50%;border:2px solid var(--green);font:700 18px var(--cond)}
+details[open] summary:before{content:"−"}
+details p{color:#3b352a}
+code{font:13px var(--mono);background:#efe6cf;padding:1px 5px;border-radius:3px}
+.burner{margin-top:12px;padding:12px 14px;border:1px dashed var(--line);border-radius:4px;font-size:14px;color:var(--mute);word-break:break-all}
+.burner b{color:var(--ink)}
+.copy{margin-left:8px;padding:2px 8px;border-radius:3px;border:1px solid var(--line);background:#fff;color:var(--ink);font:600 12px var(--cond)}
+footer{margin-top:30px;padding-top:16px;border-top:2px solid var(--green);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--mute);font-size:14.5px}
+footer a{font-weight:700}
+@media (max-width:900px){.hero,.grid2{grid-template-columns:1fr}.board li{grid-template-columns:34px 16px 1fr auto;row-gap:4px}.board .mg{display:none}.board .tg{grid-column:3}.board .pf{grid-column:3/-1}}
+@media (max-width:640px){#track{height:330px}.call{text-align:left}}
+</style>
+</head>
+<body>
+<header class="bar"><div class="in">
+  <div class="logo"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M5 22V12a8 8 0 0 1 16 0v10" fill="none" stroke="#e6c97a" stroke-width="4" stroke-linecap="round"/><g fill="#0f3d2e"><circle cx="5" cy="15" r="1"/><circle cx="21" cy="15" r="1"/><circle cx="7" cy="8.5" r="1"/><circle cx="19" cy="8.5" r="1"/></g></svg>Perp Race<small>The latency derby</small></div>
+  <div class="pills"><span class="pill" id="pLive">connecting...</span><span class="pill" id="pReal">real tx: off</span></div>
+</div></header>
+<main>
+  <section class="hero">
+    <div>
+      <div class="kicker" id="kick">Race day · RWA stock perps · 5 venues</div>
+      <h1>Here we go <em>again.</em></h1>
+      <p class="lede">Five perp DEXs. <b>One real order each</b>, fired at the same instant for the stock you pick. The first venue to confirm your order crosses the line. Every result links to its proof.</p>
+    </div>
+    <div class="racecard">
+      <div class="rc-head"><span>Race card</span><span id="raceNo">Race 1</span></div>
+      <div class="rc-body">
+        <span class="lbl">Choose your stock</span>
+        <div class="chips" id="chips"></div>
+        <div class="pxrow">
+          <div><span class="lbl" id="pxl">TSLA-PERP mark on DreamDEX</span><span id="px">...</span></div>
+          <label><span class="lbl">Size (shares)</span><input id="size" type="number" min="0.1" step="0.1" value="5"></label>
+        </div>
+        <div class="btns">
+          <button id="long" class="fire long">Long</button>
+          <button id="short" class="fire short">Short</button>
+          <button id="x10" class="ghost" title="Run ten races in a row">×10</button>
+        </div>
+        <div id="note">Warming up connections...</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="course">
+    <div class="chead"><h2 id="stitle">TSLA-PERP <span>Stakes</span></h2><div class="call" id="call">The runners are in the paddock</div></div>
+    <canvas id="track"></canvas>
+    <div class="cfoot"><span>Each horse crosses the line at the moment its venue confirmed the order.</span><span>Slow motion replay · the clock shows real milliseconds</span></div>
+  </section>
+  <div id="verdict"></div>
+
+  <section class="grid2">
+    <div class="panel">
+      <h3 class="ptitle">Tote board <small id="toteT">TSLA-PERP · live mark</small></h3>
+      <div class="tote" id="tote"></div>
+    </div>
+    <div class="panel">
+      <h3 class="ptitle">Rules of the race</h3>
+      <ol class="rules">
+        <li><div><b>Same instant</b><p>You pick a side. One order leaves for every venue at the same moment, from the same server, over connections that are already open.</p></div></li>
+        <li><div><b>Real, but harmless</b><p>Each order is priced so that it cannot trade. The venue still has to process it, but no position opens and no fee is paid.</p></div></li>
+        <li><div><b>The clock stops at confirmation</b><p>Timing ends when the venue reports the order as processed, not when it merely says "received".</p></div></li>
+        <li><div><b>Check it yourself</b><p>Where an order is a transaction on a public chain, the result links to it on that chain's explorer. The code is open source.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:18px"><div class="tw">
+    <h3 class="ptitle">Form guide <small>your rounds</small></h3>
+    <table>
+      <thead><tr><th>Runner</th><th>Races</th><th>Median time</th><th>Wins</th><th style="text-align:left">Measured as</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div></section>
+
+  <details class="panel">
+    <summary>Stewards' notes: how each venue is measured</summary>
+    <p>Every venue gets the same treatment wherever it allows it: a real order for the stock you picked, sized near the venue's minimum and priced a little away from the market so that it cannot trade. On the four mainnet venues the order is immediate-or-cancel, the same path a market order takes.</p>
+    <div class="tw"><table class="m">
+      <thead><tr><th>Venue</th><th>What we send</th><th>When the clock stops</th><th>Proof you can check</th></tr></thead>
+      <tbody>
+        <tr><td>DreamDEX</td><td>A real limit order on the Somnia Tokyo testnet. It rests on the book and is cancelled right after</td><td>The receipt of the order's transaction comes back</td><td>The transaction, on the Somnia explorer</td></tr>
+        <tr><td>Hyperliquid</td><td>A real order on mainnet, signed by an API wallet</td><td>Hyperliquid replies that the order was processed</td><td>The transaction, on the Hyperliquid explorer</td></tr>
+        <tr><td>Arcus</td><td>A real order on mainnet</td><td>The order reaches its final state on Arcus's public order stream</td><td>An order id. Matching is off-chain, so a single order has no public transaction</td></tr>
+        <tr><td>Lighter</td><td>A real order on mainnet</td><td>The order reaches its final state on the account order stream</td><td>A transaction hash only. Lighter keeps no lasting public record of an order that did not trade</td></tr>
+        <tr><td>Aster</td><td>A real order on mainnet</td><td>Aster replies with the order's final state</td><td>An order id. The API returns no transaction hash for an order</td></tr>
+      </tbody>
+    </table></div>
+    <p>The replay is slowed down, and it gives the first milliseconds more screen time than the rest so that a fast finish is still visible. Each horse moves at a steady pace in real time and reaches the line exactly at its venue's confirmation time; the race clock always shows real milliseconds.</p>
+    <div class="burner" id="burner"></div>
+  </details>
+
+  <footer><span>Built by Somnia DevRel. DreamDEX runs on Somnia, so read the stewards' notes before you trust the scoreboard.</span><a id="src" href="https://github.com/emrestay/perp-race" target="_blank" rel="noopener">Source code on GitHub ↗</a></footer>
+</main>
+
+<script>
+'use strict';
+const REPO_URL = 'https://github.com/emrestay/perp-race';
+const now = () => performance.now();
+const $ = s => document.querySelector(s);
+const med = a => { const s = a.filter(x => x != null).sort((x, y) => x - y); if (!s.length) return null; const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const fms = x => x == null ? '·' : Math.round(x).toLocaleString('en-US') + ' ms';
+const fpx = p => p == null ? '·' : p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const sleep = t => new Promise(r => setTimeout(r, t));
+const COND = '"Barlow Condensed","Arial Narrow",sans-serif', MONO = '"JetBrains Mono",ui-monospace,Menlo,monospace', SERIF = '"Playfair Display",Georgia,serif';
+const HL_DOC_MS = 200; // hyperliquid.gitbook.io/hyperliquid-docs/hypercore/overview: median end-to-end, co-located
+const LIGHTER_DOC_MS = 300; // docs.lighter.xyz/trading/trading-fees: taker latency, standard account
+let server = null; // set when this page is served with its /api (real orders, measured from the server)
+
+const STOCKS = {
+  TSLA: { pool: '0xe3458a654ce3d839b96581fb46b40a0c37d4cd61', hl: 'xyz:TSLA', arcus: 'TSLA-USD', aster: 'tslausdt', lighter: 112 },
+  COIN: { pool: '0xd4fdb2cf877507d401b6c2632bdcb79ebf1ceaf7', hl: 'xyz:COIN', arcus: 'COIN-USD', aster: 'coinusdt', lighter: 109 },
+  MSTR: { pool: '0xaf690c35d4254d63143d5f35b415b8228c4873b6', hl: 'xyz:MSTR', arcus: 'MSTR-USD', aster: 'mstrusdt', lighter: 122 },
+  GOOGL: { pool: '0xaa7f246114de23d0e261f01ffe74c6b632e277ae', hl: 'xyz:GOOGL', arcus: 'GOOGL-USD', aster: 'googlusdt', lighter: 116 },
+  AMD: { pool: '0x3b844ef76971c6f2274d97eb45b1e2cd3cea2708', hl: 'xyz:AMD', arcus: 'AMD-USD', aster: 'amdusdt', lighter: 138 },
+  HOOD: { pool: '0x26d79cd2753e1695bb41dff33c2dd69049a44ee3', hl: 'xyz:HOOD', arcus: 'HOOD-USD', aster: 'hoodusdt', lighter: 108 },
+  INTC: { pool: '0xc8442ac3e855c4b693373bcafb5b214ef81c3519', hl: 'xyz:INTC', arcus: 'INTC-USD', aster: 'intcusdt', lighter: 137 },
+  MRVL: { pool: '0x2140de5c86333b62dae08b74adb32aa0c7c5195a', hl: 'xyz:MRVL', arcus: 'MRVL-USD', aster: 'mrvlusdt', lighter: 174 },
+};
+let stock = 'TSLA';
+
+// color = jockey silks, coat = the horse
+const VENUES = [
+  { id: 'dreamdex', name: 'DreamDEX', sub: 'Somnia Tokyo testnet', color: '#8e44d6', cap: '#f1c40f', coat: '#4a2e1c', kind: 'chain', make: somnia,
+    ws: 'wss://api.hideki.infra.testnet.somnia.network/ws', sendWs: 'wss://send.hideki.infra.testnet.somnia.network/ws' },
+  { id: 'hyperliquid', name: 'Hyperliquid', sub: 'HIP-3 market, mainnet', color: '#1fa98a', cap: '#ffffff', coat: '#8a4a22', kind: 'chain', make: hyperliquid,
+    pingWs: 'wss://api.hyperliquid.xyz/ws', blockWs: 'wss://rpc.hyperliquid.xyz/ws' },
+  { id: 'arcus', name: 'Arcus', sub: 'mainnet', color: '#e0a21b', cap: '#1d1912', coat: '#b9b4aa', kind: 'api', make: arcus, pingUrl: 'https://api.arcus.xyz/v1/time', ws: 'wss://api.arcus.xyz/v1/ws' },
+  { id: 'lighter', name: 'Lighter', sub: 'mainnet', color: '#2f6fd6', cap: '#ffffff', coat: '#2a221d', kind: 'api', make: lighter, ws: 'wss://mainnet.zklighter.elliot.ai/stream' },
+  { id: 'aster', name: 'Aster', sub: 'mainnet', color: '#e2582c', cap: '#1d1912', coat: '#a5713f', kind: 'api', make: aster, ws: 'wss://fstream.asterdex.com/ws' },
+];
+
+/* ---------- helpers ---------- */
+class Series {
+  constructor() { this.a = []; }
+  push(p) { if (!(p > 0)) return; const t = now(); this.a.push({ t, p }); while (this.a.length && t - this.a[0].t > 120000) this.a.shift(); }
+  last() { return this.a.length ? this.a[this.a.length - 1].p : null; }
+  clear() { this.a = []; }
+}
+function socket(url, h) {
+  let ws, backoff = 1000;
+  const api = { send(o) { if (ws && ws.readyState === 1) { ws.send(JSON.stringify(o)); return true; } return false; } };
+  (function connect() {
+    try { ws = new WebSocket(url); } catch (e) { setTimeout(connect, 5000); return; }
+    ws.onopen = () => { backoff = 1000; h.open && h.open(api); };
+    ws.onmessage = e => { let j; try { j = JSON.parse(e.data); } catch { return; } h.message(j, api); };
+    ws.onclose = () => { h.close && h.close(); setTimeout(connect, backoff); backoff = Math.min(backoff * 2, 15000); };
+    ws.onerror = () => { try { ws.close(); } catch {} };
+  })();
+  return api;
+}
+function pinger(send) {
+  let q = [];
+  return {
+    pong() { const w = q.shift(); if (w) w(); }, reset() { q = []; },
+    ping() { return new Promise((res, rej) => {
+      const t = now();
+      const f = () => { clearTimeout(to); res(now() - t); };
+      const to = setTimeout(() => { q = q.filter(x => x !== f); rej(new Error('timeout')); }, 8000);
+      if (!send()) { clearTimeout(to); rej(new Error('connecting')); return; }
+      q.push(f);
+    }); },
+  };
+}
+function base(v) {
+  v.rtts = []; v.arrivals = []; v.waiters = []; v.hist = { api: [], conf: [] }; v.wins = 0; v.err = null; v.warm = false; v.head = null; v.px = new Series();
+  v.onBlock = n => {
+    const t = now(); v.head = n; v.arrivals.push({ t, n });
+    while (v.arrivals.length && t - v.arrivals[0].t > 12000) v.arrivals.shift();
+    const w = v.waiters; v.waiters = []; for (const f of w) f({ n, t });
+  };
+  v.nextBlock = () => new Promise((res, rej) => {
+    const f = b => { clearTimeout(to); res(b); };
+    const to = setTimeout(() => { v.waiters = v.waiters.filter(x => x !== f); rej(new Error('no block in 8 s')); }, 8000);
+    v.waiters.push(f);
+  });
+  v.blockMs = () => { const a = v.arrivals; if (a.length < 3) return null; const dn = a[a.length - 1].n - a[0].n; return dn > 0 ? (a[a.length - 1].t - a[0].t) / dn : null; };
+}
+
+/* ---------- venue adapters ---------- */
+function somnia(v) {
+  let id = 10; const pending = new Map();
+  const handlers = sock => ({
+    open(api) { if (sock === 'api') api.send({ jsonrpc: '2.0', id: 1, method: 'eth_subscribe', params: ['newHeads'] }); },
+    message(j) {
+      if (j.method === 'eth_subscription') { const h = j.params && j.params.result; if (h && h.number) v.onBlock(parseInt(h.number, 16)); return; }
+      const p = pending.get(j.id); if (p) { pending.delete(j.id); p.f(j); }
+    },
+    close() { for (const [k, p] of pending) if (p.sock === sock) { pending.delete(k); p.f({ error: { message: 'socket closed' } }); } },
+  });
+  const S = { api: socket(v.ws, handlers('api')), send: null };
+  const sockOf = name => S[name] || (S[name] = socket(v.sendWs, handlers('send')));
+  const call = (sock, method, params = [], timeout = 8000) => new Promise((res, rej) => {
+    const i = ++id;
+    const to = setTimeout(() => { pending.delete(i); rej(new Error('timeout')); }, timeout);
+    pending.set(i, { sock, f: j => { clearTimeout(to); j.error ? rej(new Error(j.error.message || 'rpc error')) : res(j.result); } });
+    if (!sockOf(sock).send({ jsonrpc: '2.0', id: i, method, params })) { clearTimeout(to); pending.delete(i); rej(new Error('connecting')); }
+  });
+  v.rpc = (m, p) => call('api', m, p);
+  v.sendRpc = (m, p) => call('send', m, p, 15000);
+  v.ping = async () => { const t = now(); await call('api', 'eth_blockNumber'); return now() - t; };
+  // tryGetMarkPrice() -> (bool ok, uint256 price, 18 decimals)
+  let busy = false;
+  setInterval(async () => {
+    if (busy || document.hidden) return; busy = true; const s = stock;
+    try {
+      const r = await call('api', 'eth_call', [{ to: STOCKS[s].pool, data: '0xa8c485ca' }, 'latest'], 3000);
+      if (s === stock && r && r.length >= 130 && BigInt('0x' + r.slice(2, 66)) !== 0n) v.px.push(Number(BigInt('0x' + r.slice(66, 130)) / 10n ** 12n) / 1e6);
+    } catch {} busy = false;
+  }, 300);
+  v.openSend = () => { sockOf('send'); }; // opened only when the browser burner is in use
+  setInterval(() => { if (S.send) call('send', 'eth_chainId').catch(() => {}); }, 20000);
+}
+function hyperliquid(v) {
+  let cur = null;
+  const a = socket(v.pingWs, {
+    open() { cur = null; sub(); },
+    message(j) {
+      if (j.channel === 'pong') P.pong();
+      else if (j.channel === 'bbo') { const d = j.data; if (d && d.coin === STOCKS[stock].hl && d.bbo && d.bbo[0] && d.bbo[1]) v.px.push((+d.bbo[0].px + +d.bbo[1].px) / 2); }
+      else if (j.channel === 'post') { const pl = j.data && j.data.response && j.data.response.payload; if (pl && pl.type === 'allMids' && pl.data) v.px.push(+pl.data[STOCKS[stock].hl]); }
+    },
+    close() { P.reset(); },
+  });
+  const P = pinger(() => a.send({ method: 'ping' }));
+  let midId = 1000;
+  const askMid = () => a.send({ method: 'post', id: ++midId, request: { type: 'info', payload: { type: 'allMids', dex: 'xyz' } } });
+  function sub() { const c = STOCKS[stock].hl; if (cur === c) return; if (cur) a.send({ method: 'unsubscribe', subscription: { type: 'bbo', coin: cur } }); if (a.send({ method: 'subscribe', subscription: { type: 'bbo', coin: c } })) { cur = c; askMid(); } }
+  // The bbo stream is silent while the book does not move, so a quiet market would leave the line empty.
+  setInterval(() => { if (!document.hidden) askMid(); }, 2000);
+  socket(v.blockWs, {
+    open(api) { api.send({ method: 'subscribe', subscription: { type: 'explorerBlock' } }); },
+    message(j) { if (Array.isArray(j) && j.length) { let h = 0; for (const b of j) if (b.height > h) h = b.height; if (h) v.onBlock(h); } },
+  });
+  v.ping = P.ping; v.setStock = sub;
+}
+function arcus(v) {
+  let cur = null;
+  const s = socket(v.ws, {
+    open() { cur = null; sub(); },
+    message(j) { if (j.channel === 'bbo' && j.id === STOCKS[stock].arcus && j.contents) { const c = j.contents; if (c.bestBid && c.bestAsk) v.px.push((+c.bestBid.price + +c.bestAsk.price) / 2); } },
+  });
+  function sub() { const m = STOCKS[stock].arcus; if (cur === m) return; if (cur) s.send({ type: 'unsubscribe', channel: 'bbo', id: cur }); if (s.send({ type: 'subscribe', channel: 'bbo', id: m })) cur = m; }
+  v.ping = async () => { const t = now(); const r = await fetch(v.pingUrl, { cache: 'no-store', credentials: 'omit' }); await r.arrayBuffer(); if (!r.ok) throw new Error('HTTP ' + r.status); return now() - t; };
+  v.setStock = sub;
+}
+function lighter(v) {
+  let cur = null;
+  const s = socket(v.ws, {
+    open() { cur = null; setTimeout(sub, 50); },
+    message(j) {
+      if (j.type === 'pong') { P.pong(); return; }
+      if (j.type === 'ping') { s.send({ type: 'pong' }); return; }
+      const m = j.market_stats; if (m && m.market_id === STOCKS[stock].lighter) v.px.push(+(m.mid_price || m.mark_price));
+    },
+    close() { P.reset(); },
+  });
+  const P = pinger(() => s.send({ type: 'ping' }));
+  function sub() { const m = 'market_stats/' + STOCKS[stock].lighter; if (cur === m) return; if (cur) s.send({ type: 'unsubscribe', channel: cur }); if (s.send({ type: 'subscribe', channel: m })) cur = m; }
+  v.ping = P.ping; v.setStock = sub;
+}
+function aster(v) {
+  let cur = null, id = 0;
+  const s = socket(v.ws, {
+    open() { cur = null; sub(); },
+    message(j) {
+      if (j.e === 'markPriceUpdate') { if (String(j.s).toLowerCase() === STOCKS[stock].aster) v.px.push(+j.p); return; }
+      if (j.id != null && Array.isArray(j.result)) P.pong();
+    },
+    close() { P.reset(); },
+  });
+  const P = pinger(() => s.send({ method: 'LIST_SUBSCRIPTIONS', id: ++id }));
+  // The mark price stream ticks every second, even on a quiet book (bookTicker only speaks on a change).
+  function sub() { const m = STOCKS[stock].aster + '@markPrice@1s'; if (cur === m) return; if (cur) s.send({ method: 'UNSUBSCRIBE', params: [cur], id: ++id }); if (s.send({ method: 'SUBSCRIBE', params: [m], id: ++id })) cur = m; }
+  v.ping = P.ping; v.setStock = sub;
+}
+
+/* ---------- DOM ---------- */
+const tote = $('#tote'), tbody = $('#tbody'), chips = $('#chips'), callEl = $('#call');
+VENUES.forEach((v, i) => {
+  base(v); v.make(v); v.no = i + 1; v.ph = i * 1.3;
+  const d = document.createElement('div'); d.innerHTML = `<i style="background:${v.color}"></i><span>${v.no} · ${v.name}</span><b class="num">·</b>`; tote.appendChild(d); v.lg = d.querySelector('b');
+  const tr = document.createElement('tr'); tr.innerHTML = `<td><i style="background:${v.color}"></i>${v.no} · ${v.name}</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="basis"></td>`; tbody.appendChild(tr); v.row = tr.children;
+});
+const V = Object.fromEntries(VENUES.map(v => [v.id, v])), dream = V.dreamdex, hl = V.hyperliquid;
+for (const s of Object.keys(STOCKS)) { const b = document.createElement('button'); b.className = 'chip' + (s === stock ? ' on' : ''); b.textContent = s; b.onclick = () => setStock(s); chips.appendChild(b); }
+function setStock(s) {
+  if (racing || s === stock) return; stock = s;
+  for (const b of chips.children) b.classList.toggle('on', b.textContent === s);
+  for (const v of VENUES) { v.px.clear(); v.setStock && v.setStock(); }
+  replay = null;
+  $('#pxl').textContent = s + '-PERP mark on DreamDEX'; $('#stitle').innerHTML = s + '-PERP <span>Stakes</span>'; $('#toteT').textContent = s + '-PERP · live mark'; $('#px').textContent = '...';
+}
+$('#src').href = REPO_URL;
+
+/* ---------- burner wallet: real transaction mode (testnet only) ---------- */
+const burner = { acct: null, bal: 0n, nonce: null, gas: 6000000000n, ready: false, err: null };
+async function initBurner() {
+  try {
+    const m = await import('https://esm.sh/viem@2.21.55/accounts');
+    let pk = null; try { pk = localStorage.getItem('perp-race-burner'); } catch {}
+    if (!pk) { pk = m.generatePrivateKey(); try { localStorage.setItem('perp-race-burner', pk); } catch {} }
+    burner.acct = m.privateKeyToAccount(pk); dream.openSend();
+    for (let i = 0; i < 4; i++) await burner.acct.signTransaction({ chainId: 50383, type: 'eip1559', nonce: i, to: burner.acct.address, value: 0n, gas: 30000n, maxFeePerGas: 1n, maxPriorityFeePerGas: 0n }); // warm-up only, never sent
+    refreshBurner(); setInterval(refreshBurner, 8000);
+  } catch (e) { burner.err = e.message; }
+  paintBurner();
+}
+async function refreshBurner() {
+  if (!burner.acct || racing || document.hidden) return;
+  try {
+    const a = burner.acct.address;
+    const [b, n, g] = await Promise.all([dream.rpc('eth_getBalance', [a, 'latest']), dream.rpc('eth_getTransactionCount', [a, 'pending']), dream.rpc('eth_gasPrice')]);
+    burner.bal = BigInt(b); burner.gas = BigInt(g); const nn = Number(BigInt(n)); if (burner.nonce == null || nn > burner.nonce) burner.nonce = nn;
+    burner.ready = burner.bal > 30000n * burner.gas * 2n * 3n;
+  } catch {}
+  paintBurner();
+}
+function paintBurner() {
+  const el = $('#burner'); if (!el) return;
+  if (burner.err) { el.textContent = 'Real transaction mode unavailable: ' + burner.err; return; }
+  if (!burner.acct) return;
+  const bal = Number(burner.bal / 10n ** 12n) / 1e6;
+  el.innerHTML = `<b>DreamDEX real transaction mode: ${burner.ready ? 'ON' : 'OFF'}.</b> This page made a throwaway testnet wallet that lives only in this browser. Send it a little Somnia Tokyo testnet STT and every round sends a real transaction from it.<br>Address: <b class="num">${burner.acct.address}</b><button class="copy" id="cp">copy</button> · Balance: <b class="num">${bal} STT</b>`;
+  const cp = $('#cp'); if (cp) cp.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(burner.acct.address); cp.textContent = 'copied'; };
+  if (!server) { const p = $('#pReal'); p.textContent = 'real tx: ' + (burner.ready ? 'on' : 'off'); p.classList.toggle('on', burner.ready); }
+}
+async function realTx() {
+  const a = burner.acct, nonce = burner.nonce++;
+  const raw = await a.signTransaction({ chainId: 50383, type: 'eip1559', nonce, to: a.address, value: 0n, gas: 30000n, maxFeePerGas: burner.gas * 2n, maxPriorityFeePerGas: 0n });
+  return dream.sendRpc('eth_sendRawTransactionSync', [raw]);
+}
+
+/* ---------- background sampling ---------- */
+let racing = false, round = null, replay = null, raceNo = 0;
+async function sample(v) {
+  try { const t = await v.ping(); if (v.warm) { v.rtts.push(t); if (v.rtts.length > 12) v.rtts.shift(); } v.warm = true; v.err = null; }
+  catch (e) { v.err = e.message; }
+}
+function sampleAll() { if (document.hidden || racing) return; VENUES.forEach((v, i) => setTimeout(() => { if (!racing) sample(v); }, i * 110)); }
+setTimeout(sampleAll, 700); setTimeout(sampleAll, 1900); setInterval(sampleAll, 3000);
+
+function paintText() {
+  const p = dream.px.last() ?? hl.px.last(); $('#px').textContent = p ? '$' + fpx(p) : '...';
+  for (const v of VENUES) {
+    const s = fpx(v.px.last());
+    if (s !== v.lg.textContent) { v.lg.textContent = s; v.lg.classList.add('tick'); clearTimeout(v.tk); v.tk = setTimeout(() => v.lg.classList.remove('tick'), 280); }
+    const n = v.hist.api.length;
+    v.row[1].textContent = n || '·';
+    v.row[2].textContent = v.hist.conf.length ? (v.lastBasis === 'docs' ? '≈ ' : '') + fms(med(v.hist.conf)) : (n ? 'not observable' : '·');
+    v.row[3].textContent = v.hist.conf.length ? v.wins : '·';
+    v.row[4].textContent = n ? tagOf({ basis: v.lastBasis, kind: v.lastKind })[1] : '·';
+  }
+  const live = VENUES.filter(v => v.warm && !v.err).length;
+  const pl = $('#pLive'); pl.innerHTML = `<b>${live}/${VENUES.length}</b> runners live`; pl.classList.toggle('on', live === VENUES.length);
+  if (!round && !racing) $('#note').textContent = live < VENUES.length ? `Warming up connections: ${live}/${VENUES.length} ready` : 'Ready. Pick a side.';
+}
+setInterval(paintText, 250);
+
+/* ---------- the track ---------- */
+const dpr = Math.min(2, window.devicePixelRatio || 1);
+const trackEl = $('#track');
+const RANK = ['', '1st', '2nd', '3rd', '4th', '5th'];
+const NOSE = 37.5, TAIL = 36; // horse drawing extents, in horse units
+function fit(c) {
+  const r = c.getBoundingClientRect(), W = Math.round(r.width * dpr), H = Math.round(r.height * dpr);
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); return { x, w: r.width, h: r.height };
+}
+function rr(x, X, Y, W, H, r) { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + W, Y, X + W, Y + H, r); x.arcTo(X + W, Y + H, X, Y + H, r); x.arcTo(X, Y + H, X, Y, r); x.arcTo(X, Y, X + W, Y, r); x.closePath(); }
+function shade(hex, f) {
+  const n = parseInt(hex.slice(1), 16), m = c => Math.max(0, Math.min(255, Math.round(f < 0 ? c * (1 + f) : c + (255 - c) * f)));
+  return `rgb(${m(n >> 16)},${m(n >> 8 & 255)},${m(n & 255)})`;
+}
+function layout(w, h) {
+  const mob = w < 640, top = 30, bot = 16, LH = (h - top - bot) / VENUES.length;
+  const s = Math.min(1.05, LH / 52) * (mob ? 0.9 : 1), gx = mob ? 4 : 10, gw = (NOSE + TAIL) * s + 10, x0 = gx + gw;
+  const R = mob ? 70 : 160, xf = w - R;
+  return { mob, top, bot, LH, s, gx, gw, x0, xf, R };
+}
+// A horse and jockey, facing right, drawn around the middle of the body. gait 0 = standing, 1 = full gallop.
+function drawHorse(x, cx, cy, s, v, ph, gait) {
+  const S = Math.sin, P = Math.PI, g = gait, coat = v.coat, dark = shade(coat, -0.4), far = shade(coat, -0.25);
+  x.save(); x.translate(cx, cy - 2.2 * g * Math.abs(S(ph)) * s); x.scale(s, s); x.lineCap = 'round'; x.lineJoin = 'round';
+  const leg = (hx, hy, a, b, col) => {
+    const kx = hx + 10 * S(a), ky = hy + 10 * Math.cos(a), fx = kx + 10.5 * S(a + b), fy = ky + 10.5 * Math.cos(a + b);
+    x.strokeStyle = col; x.lineWidth = 3.4; x.beginPath(); x.moveTo(hx, hy); x.lineTo(kx, ky); x.lineTo(fx, fy); x.stroke();
+    x.fillStyle = '#17110c'; x.beginPath(); x.arc(fx, fy, 1.9, 0, 6.3); x.fill();
+  };
+  const front = o => [g * 0.62 * S(ph + o) + 0.05 * (1 - g), -g * 1.05 * Math.max(0, S(ph + o + 1.9))];
+  const hind = o => [g * 0.55 * S(ph + o + P) - 0.07 * (1 - g), g * 0.95 * Math.max(0, S(ph + o + P + 2.2))];
+  let ab = front(0.75); leg(13, 4, ab[0], ab[1], far); ab = hind(0.75); leg(-13, 3, ab[0], ab[1], far);
+  x.strokeStyle = dark; x.lineWidth = 3.8; x.beginPath(); x.moveTo(-21, -5); x.quadraticCurveTo(-31, -10 + 3 * g * S(ph * 0.5), -35, 2 + 3 * g * S(ph)); x.stroke(); // tail
+  x.fillStyle = coat;
+  x.beginPath(); x.ellipse(0, -1, 20, 9.5, 0, 0, 6.3); x.fill();
+  x.beginPath(); x.ellipse(12, 0, 9, 9.2, 0, 0, 6.3); x.fill();
+  x.beginPath(); x.ellipse(-13, -1, 9.5, 9.6, 0, 0, 6.3); x.fill();
+  x.beginPath(); x.moveTo(8, -6); x.lineTo(21, -21); x.lineTo(28, -18); x.lineTo(19, 3); x.closePath(); x.fill(); // neck
+  x.save(); x.translate(30, -17); x.rotate(0.55); x.beginPath(); x.ellipse(0, 0, 8.6, 4.4, 0, 0, 6.3); x.fill();
+  x.fillStyle = dark; x.beginPath(); x.ellipse(6, 0.6, 3, 3.4, 0, 0, 6.3); x.fill(); x.restore(); // head, muzzle
+  x.fillStyle = coat; x.beginPath(); x.moveTo(23, -22); x.lineTo(25, -28); x.lineTo(27.5, -21.5); x.closePath(); x.fill(); // ear
+  x.strokeStyle = dark; x.lineWidth = 2.6; x.beginPath(); x.moveTo(10, -9); x.lineTo(22, -23); x.stroke(); // mane
+  x.fillStyle = '#111'; x.beginPath(); x.arc(28.2, -19.5, 1, 0, 6.3); x.fill(); // eye
+  ab = front(0); leg(11, 4, ab[0], ab[1], coat); ab = hind(0); leg(-15, 3, ab[0], ab[1], coat);
+  x.fillStyle = '#fff'; x.fillRect(-10, -9, 13, 11); x.fillStyle = v.color; x.fillRect(-10, -9, 13, 2.4); // saddle cloth
+  x.fillStyle = '#111'; x.font = '700 9px ' + COND; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(v.no), -3.5, -2.2); x.textAlign = 'left';
+  x.strokeStyle = '#f4f0e6'; x.lineWidth = 4.2; x.beginPath(); x.moveTo(-1, -12); x.lineTo(6, -8); x.stroke(); // breeches
+  x.strokeStyle = '#17110c'; x.lineWidth = 3.2; x.beginPath(); x.moveTo(6, -8); x.lineTo(2.5, -2); x.stroke(); // boot
+  x.strokeStyle = v.color; x.lineWidth = 8; x.beginPath(); x.moveTo(-1, -14); x.lineTo(8, -21); x.stroke(); // silks
+  x.lineWidth = 3; x.beginPath(); x.moveTo(7, -20); x.lineTo(15, -14); x.stroke(); // arm
+  x.strokeStyle = 'rgba(40,25,15,.85)'; x.lineWidth = 0.8; x.beginPath(); x.moveTo(15.5, -14); x.lineTo(34, -13); x.stroke(); // reins
+  x.fillStyle = '#e8c4a0'; x.beginPath(); x.arc(12, -25, 3.6, 0, 6.3); x.fill();
+  x.fillStyle = v.cap; x.beginPath(); x.arc(12, -25.6, 3.9, P, 0); x.fill(); x.fillRect(12, -26.2, 6.5, 1.7); // cap
+  x.restore();
+}
+function rail(x, w, y) {
+  x.fillStyle = 'rgba(0,0,0,.18)'; x.fillRect(0, y + 1, w, 2);
+  x.fillStyle = '#fbfaf5'; x.fillRect(0, y - 3, w, 3.5); for (let px = 8; px < w; px += 30) x.fillRect(px, y - 3, 2.5, 9);
+}
+// Replay clock: the first milliseconds get more screen time (exponent p), and the clock shows real time.
+function simMs(rp, t) {
+  const e = (t - rp.start - rp.pre) / rp.run;
+  return e <= 0 ? 0 : e >= 1 ? rp.T : rp.T * Math.pow(e, rp.p);
+}
+let lastT = now();
+function drawTrack(t) {
+  const dt = Math.min(64, t - lastT); lastT = t;
+  const { x, w, h } = fit(trackEl), L = layout(w, h), run = L.xf - L.x0;
+  // turf, mowing stripes, outfield
+  x.fillStyle = '#3d8c45'; x.fillRect(0, 0, w, h);
+  for (let k = 0, sx = 0; sx < w; k++, sx += 48) if (k % 2) { x.fillStyle = 'rgba(255,255,255,.05)'; x.fillRect(sx, 0, 48, h); }
+  x.fillStyle = '#2d6c35'; x.fillRect(0, 0, w, L.top - 8); x.fillRect(0, h - L.bot + 6, w, L.bot);
+  for (let i = 1; i < VENUES.length; i++) { const y = L.top + i * L.LH - 4; x.fillStyle = 'rgba(255,255,255,.10)'; for (let px = L.x0; px < L.xf; px += 14) x.fillRect(px, y, 7, 1); }
+  rail(x, w, L.top - 8); rail(x, w, h - L.bot + 6);
+  // furlong poles
+  for (const f of [0.25, 0.5, 0.75]) { const px = L.x0 + run * f; x.fillStyle = '#c0392b'; x.fillRect(px - 1.5, L.top - 20, 3, 13); x.fillStyle = '#fff'; x.fillRect(px - 1.5, L.top - 20, 3, 4); }
+  // winning post
+  x.fillStyle = 'rgba(255,255,255,.9)'; x.fillRect(L.xf - 1.5, L.top - 8, 3, h - L.top - L.bot + 14);
+  for (let k = 0; k < 6; k++) { x.fillStyle = k % 2 ? '#111' : '#fff'; x.fillRect(L.xf - 4, L.top - 26 + k * 3, 8, 3); }
+  x.fillStyle = '#c0392b'; x.beginPath(); x.arc(L.xf, L.top - 27, 6.5, 0, 6.3); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(L.xf, L.top - 27, 3, 0, 6.3); x.fill();
+  if (!L.mob) { x.fillStyle = 'rgba(255,255,255,.75)'; x.font = '700 11px ' + COND; x.textBaseline = 'middle'; x.fillText('WINNING POST', L.xf + 12, L.top - 18); }
+
+  const rp = replay, rd = rp && rp.rd, ms = rp ? simMs(rp, t) : 0, off = rp && t - rp.start > rp.pre * 0.5;
+  // race clock
+  { const txt = rp ? String(Math.round(ms)).padStart(4, '0') + ' ms' : racing ? '---- ms' : '0000 ms'; x.font = '700 13px ' + MONO; const tw = x.measureText(txt).width;
+    x.fillStyle = '#111'; rr(x, 6, 3, tw + 16, 18, 3); x.fill(); x.fillStyle = '#ffb43b'; x.textBaseline = 'middle'; x.fillText(txt, 14, 12.5);
+    if (rp && !L.mob && t - rp.start < rp.pre + rp.run) { x.font = '700 11px ' + COND; x.fillStyle = 'rgba(255,255,255,.8)'; x.fillText('SLOW MOTION', tw + 30, 12.5); } }
+
+  // starting stalls
+  VENUES.forEach((v, i) => {
+    const y = L.top + i * L.LH;
+    x.fillStyle = 'rgba(20,32,26,.28)'; x.fillRect(L.gx, y + 2, L.gw, L.LH - 6);
+    x.fillStyle = '#d9d4c7'; x.fillRect(L.gx, y + 1, L.gw, 3); x.fillRect(L.gx, y + L.LH - 6, L.gw, 2);
+    x.fillStyle = '#fff'; x.fillRect(L.gx + 3, y + 6, 14, 14); x.fillStyle = '#111'; x.font = '700 12px ' + COND; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(v.no), L.gx + 10, y + 13.5); x.textAlign = 'left';
+    if (!off) { x.fillStyle = '#e9e5da'; for (let k = 0; k < 4; k++) x.fillRect(L.x0 - 3, y + 4 + k * (L.LH - 12) / 3, 4, 2.5); x.fillRect(L.x0 - 2, y + 3, 2.5, L.LH - 8); } // gate closed
+    else { x.strokeStyle = '#e9e5da'; x.lineWidth = 2.5; x.beginPath(); x.moveTo(L.x0 - 1, y + 3); x.lineTo(L.x0 + 9, y + 9); x.moveTo(L.x0 - 1, y + L.LH - 6); x.lineTo(L.x0 + 9, y + L.LH - 12); x.stroke(); } // gate open
+    x.fillStyle = 'rgba(255,255,255,.62)'; x.font = '700 ' + (L.mob ? 11 : 13) + 'px ' + COND; x.textBaseline = 'alphabetic'; x.fillText(v.name.toUpperCase(), L.x0 + 12, y + 15);
+  });
+
+  // runners
+  const flash = [];
+  VENUES.forEach((v, i) => {
+    const y = L.top + i * L.LH, cy = y + L.LH / 2 + 3 * L.s;
+    const r = rd ? rd.res[v.id] : null;
+    let nose = L.x0, gait = 0, label = null, first = false;
+    if (racing && !rp) { nose = L.x0 + Math.sin(t / 90 + i * 2) * 1.2; } // fidgeting in the stalls
+    else if (rp && r) {
+      if (r.api == null) label = ['no answer', false];
+      else if (r.conf != null) {
+        const k = Math.min(1, ms / Math.max(1, r.conf)); nose = L.x0 + run * k; gait = ms > 0 ? 1 : 0;
+        if (ms >= r.conf) {
+          if (rp.fin[v.id] == null) { rp.fin[v.id] = t; if (rd.rank[v.id] === 1) rp.flashAt = t; }
+          const d = t - rp.fin[v.id], over = L.mob ? 0 : 42; nose = L.xf + over * (1 - Math.exp(-d / 260)); gait = Math.exp(-d / 520);
+          first = rd.rank[v.id] === 1; label = [RANK[rd.rank[v.id]] + ' · ' + fms(r.conf), first];
+        }
+      } else { // answered but never reported a final state: did not finish
+        const pace = rp.T * 1.7, k = Math.min(0.6, ms / pace); nose = L.x0 + run * k;
+        const e = (t - rp.start - rp.pre) / rp.run; gait = ms <= 0 ? 0 : e < 1 ? 1 : Math.exp(-(t - rp.start - rp.pre - rp.run) / 500);
+        if (e >= 1) label = ['DNF · no final state', false];
+      }
+    }
+    if (gait > 0.02) v.ph += dt * 0.024 * (0.35 + 0.65 * gait);
+    if (first && rp.fin[v.id] != null && t - rp.fin[v.id] < 2000) { x.fillStyle = 'rgba(255,214,102,' + (0.35 * (1 - (t - rp.fin[v.id]) / 2000)).toFixed(3) + ')'; x.fillRect(0, y - 3, w, L.LH); }
+    drawHorse(x, nose - NOSE * L.s, cy, L.s, v, v.ph, gait);
+    if (label) {
+      x.font = '700 ' + (L.mob ? 12 : 14) + 'px ' + COND; x.textBaseline = 'middle';
+      if (L.mob) { // two short lines in the space past the post
+        const [a, b] = label[0].split(' · '), lx = L.xf + 6;
+        x.fillStyle = label[1] ? '#ffd666' : '#fff'; x.fillText(a.toUpperCase(), lx, cy - 8); x.font = '700 11px ' + MONO; x.fillText(b || '', lx, cy + 7);
+      } else {
+        const tw = x.measureText(label[0].toUpperCase()).width + 14, lx = r && r.conf != null ? Math.min(w - tw - 4, nose + 8) : nose + 8;
+        x.fillStyle = label[1] ? '#ffd666' : 'rgba(17,17,17,.78)'; rr(x, lx, cy - 11, tw, 22, 4); x.fill();
+        x.fillStyle = label[1] ? '#1d1912' : '#fff'; x.fillText(label[0].toUpperCase(), lx + 7, cy + 0.5);
+      }
+    }
+  });
+  if (rp && rp.flashAt && t - rp.flashAt < 260) { x.fillStyle = 'rgba(255,255,255,' + (0.55 * (1 - (t - rp.flashAt) / 260)).toFixed(3) + ')'; x.fillRect(0, 0, w, h); } // photo finish flash
+  callFor(t, ms);
+}
+function callFor(t, ms) {
+  const rp = replay;
+  if (racing && !rp) return setCall("They're in the gates · orders on their way", true);
+  if (!rp) { const live = VENUES.filter(v => v.warm && !v.err).length; return setCall(live < VENUES.length ? 'The runners are warming up' : 'Pick a stock and a side to start the race', false); }
+  const rd = rp.rd;
+  if (t - rp.start < rp.pre) return setCall('The gates open...', true);
+  const done = VENUES.filter(v => rd.res[v.id].conf != null && ms >= rd.res[v.id].conf).sort((a, b) => rd.res[a.id].conf - rd.res[b.id].conf);
+  if (!done.length) return setCall("And they're off!", true);
+  const w = done[0], ended = t - rp.start >= rp.pre + rp.run;
+  if (ended || done.length === VENUES.filter(v => rd.res[v.id].conf != null).length) {
+    const second = done[1]; return setCall(`${w.name} wins${second ? ' by ' + fms(rd.res[second.id].conf - rd.res[w.id].conf) : ''}`, false);
+  }
+  if (done.length === 1) return setCall(`${w.name} takes it in ${fms(rd.res[w.id].conf)}!`, true);
+  const l = done[done.length - 1]; return setCall(`${l.name} home ${RANK[done.length]} in ${fms(rd.res[l.id].conf)}`, true);
+}
+function setCall(txt, live) { if (callEl.textContent !== txt) callEl.textContent = txt; callEl.classList.toggle('live', !!live); }
+(function frame() {
+  const t = now();
+  if (!document.hidden) {
+    drawTrack(t);
+    if (replay && !replay.revealed && t - replay.start >= replay.pre + replay.run + 500) { replay.revealed = true; reveal(replay.rd); } // the result appears only once the race is run
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* ---------- the race ---------- */
+function finishRound(rd) {
+  let max = 0; for (const v of VENUES) { const r = rd.res[v.id]; max = Math.max(max, r.api || 0, r.conf || 0, r.blk || 0); }
+  rd.S = Math.max(300, max / 0.66);
+  return max;
+}
+function recordRound(rd) {
+  for (const v of VENUES) {
+    const a = v.px.a, lo = rd.t0 - rd.S; let i0 = 0; for (let k = 0; k < a.length; k++) { if (a[k].t < lo) i0 = k; else break; } rd.pxs[v.id] = a.slice(i0);
+    const r = rd.res[v.id]; if (r.api != null) v.hist.api.push(r.api); if (r.conf != null) v.hist.conf.push(r.conf);
+    v.lastBasis = r.basis || 'none'; v.lastKind = r.kind; v.lastDocs = r.docsMs;
+  }
+  const ranked = VENUES.filter(v => rd.res[v.id].conf != null).sort((a, b) => rd.res[a.id].conf - rd.res[b.id].conf);
+  if (ranked[0]) { rd.winner = ranked[0].id; ranked[0].wins++; }
+  rd.rank = {}; ranked.forEach((v, i) => { rd.rank[v.id] = i + 1; });
+  rd.done = true; round = rd; racing = false;
+  return rd;
+}
+// Server mode: our own function fires real orders and reports what it measured from where it runs.
+async function measureServer(side) {
+  racing = true; replay = null;
+  const size = Math.max(0, +$('#size').value || 0);
+  const rd = { t0: 0, side, stock, size, res: {}, blocks: {}, pxs: {}, S: 600, done: false, winner: null, server: true };
+  $('#note').textContent = 'Orders are on their way...';
+  const dry = /[?&]noreal\b/.test(location.search) ? '&real=0' : '';
+  let j; try { j = await (await fetch(`/api/race?stock=${stock}&side=${side}${dry}`, { cache: 'no-store' })).json(); } catch (e) { j = { error: e.message, venues: {} }; }
+  if (j.error === 'busy') { await sleep(4000); try { j = await (await fetch(`/api/race?stock=${stock}&side=${side}${dry}`, { cache: 'no-store' })).json(); } catch (e) { j = { error: e.message, venues: {} }; } }
+  for (const v of VENUES) {
+    const s = (j.venues || {})[v.id] || { error: j.error || 'no data' };
+    rd.res[v.id] = { api: s.network, blk: s.floor, conf: s.confirmed, basis: s.basis, kind: s.kind, docsMs: s.docsMs, err: s.error, status: s.status, exec: s.execMicros, tx: s.tx, ack: s.ack, maker: s.maker, proof: s.proof };
+  }
+  rd.region = j.region; rd.cached = !!(j.cached || j.shared) || (j.at && Date.now() - j.at > 6000); // also true when the CDN served a recent race
+  const max = finishRound(rd); rd.t0 = now() - max - 150;
+  return recordRound(rd);
+}
+async function measure(side) {
+  if (server) return measureServer(side);
+  racing = true; replay = null;
+  const size = Math.max(0, +$('#size').value || 0);
+  const rd = { t0: 0, side, stock, size, res: {}, blocks: {}, pxs: {}, S: 600, done: false, winner: null };
+  for (const v of VENUES) rd.res[v.id] = {};
+  $('#note').textContent = 'Firing...';
+  const order = [...VENUES].sort(() => Math.random() - 0.5);
+  rd.t0 = now();
+  const jobs = order.map(async v => {
+    const r = rd.res[v.id];
+    try { await v.ping(); r.api = now() - rd.t0; if (v.kind === 'chain') { const b = await v.nextBlock(); r.blk = b.t - rd.t0; r.n = b.n; } }
+    catch (e) { r.err = e.message; }
+  });
+  if (burner.ready) jobs.push((async () => { const r = rd.res.dreamdex; try { const rc = await realTx(); r.real = now() - rd.t0; r.tx = rc && rc.transactionHash; r.rcBlock = rc && rc.blockNumber; r.exec = rc && rc.executionTimeMicros; r.ok = rc && rc.status === '0x1'; } catch (e) { r.realErr = e.message; burner.nonce = null; } })());
+  await Promise.all(jobs);
+  const d = rd.res.dreamdex, h = rd.res.hyperliquid;
+  if (d.real != null) { d.conf = d.real; d.basis = 'real'; } else if (d.blk != null) { d.conf = d.blk; d.basis = 'block'; }
+  if (h.api != null) { h.conf = h.api + HL_DOC_MS; h.basis = 'docs'; h.docsMs = HL_DOC_MS; }
+  const li = rd.res.lighter; if (li.api != null) { li.conf = li.api + LIGHTER_DOC_MS; li.basis = 'docs'; li.docsMs = LIGHTER_DOC_MS; }
+  if (d.basis === 'real') d.kind = 'transaction';
+  finishRound(rd);
+  for (const v of VENUES) if (v.kind === 'chain') rd.blocks[v.id] = v.arrivals.filter(a => a.t >= rd.t0 && a.t <= rd.t0 + rd.S).map(a => a.t - rd.t0);
+  return recordRound(rd);
+}
+const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const shortId = h => { h = String(h); return h.length > 16 ? h.slice(0, 8) + '…' + h.slice(-6) : h; };
+// How a result was obtained, as a short label: [css class, text]
+function tagOf(r) {
+  if (r.basis === 'real') return ['real', r.kind && r.kind !== 'transaction' ? 'real order' : 'real transaction'];
+  if (r.basis === 'docs') return ['docs', 'published figure'];
+  if (r.basis === 'block') return ['docs', 'next block'];
+  return ['none', 'network only'];
+}
+function countUp(el, to) {
+  const t0 = now(), dur = 750;
+  (function step() { const k = Math.min(1, (now() - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(to * e).toLocaleString('en-US'); if (k < 1) requestAnimationFrame(step); })();
+}
+function noteFor(rd) {
+  const pd = rd.pxs.dreamdex, px = pd && pd.length ? pd[pd.length - 1].p : null;
+  $('#note').textContent = `${rd.side.toUpperCase()} ${rd.size} ${rd.stock}${px ? ' ≈ $' + Math.round(rd.size * px).toLocaleString('en-US') : ''}`;
+}
+// The official result: winner, then every runner with its time, margin, how it was measured and its proof.
+function reveal(rd) {
+  const el = $('#verdict'), w = rd.winner && V[rd.winner];
+  const head = `<div class="rhead"><span class="t">Official result <em>· Race ${rd.no} · ${esc(rd.stock)}-PERP ${esc(rd.side)}</em></span><span class="stamp">${w ? 'PHOTO FINISH' : 'NO RACE'}</span></div>`;
+  if (!w) { el.innerHTML = `<div class="result">${head}<p class="rfoot">No venue confirmed this round. Check the connection and try again.</p></div>`; return; }
+  const ranked = VENUES.filter(v => rd.res[v.id].conf != null).sort((a, b) => rd.res[a.id].conf - rd.res[b.id].conf), rest = VENUES.filter(v => rd.res[v.id].conf == null);
+  const wc = rd.res[w.id].conf;
+  const proof = r => { const p = r.proof; if (!p) return '<span class="pf dim">·</span>';
+    return p.url ? `<span class="pf"><a href="${esc(p.url)}" target="_blank" rel="noopener" title="${esc(p.where)}">tx ${esc(shortId(p.id))} ↗</a></span>` : `<span class="pf dim" title="${esc(p.where)}">${p.kind === 'tx' ? 'tx' : 'order'} ${esc(shortId(p.id))}</span>`; };
+  const row = (v, i, n) => { const r = rd.res[v.id], [cls, txt] = tagOf(r);
+    const time = r.conf != null ? (r.basis === 'docs' ? '≈ ' : '') + fms(r.conf) : r.api != null ? 'DNF' : 'no answer';
+    const mg = n === 1 ? 'winner' : r.conf != null ? '+' + fms(r.conf - wc) : '·';
+    return `<li class="${n === 1 ? 'first' : ''}" style="--c:${v.color};--d:${(0.25 + i * 0.1).toFixed(2)}s"><span class="pos">${n ? RANK[n] : '·'}</span><span class="silk"></span><span class="hn">${v.no} · ${v.name}<small>${esc(v.sub)}</small></span><span class="rt num">${time}</span><span class="mg">${mg}</span><span class="tg ${cls}"${r.err ? ` title="${esc(r.err)}"` : ''}>${r.api == null ? 'no answer' : txt}</span>${proof(r)}</li>`; };
+  const foot = rd.server ? (rd.cached ? 'This result was reused from a race moments ago.' : '')
+    : rd.res.dreamdex.basis === 'real' ? 'Measured in your browser. A real transaction on DreamDEX testnet, estimates elsewhere.' : 'Measured in your browser. Nothing was signed or sent.';
+  el.innerHTML = `<div class="result">${head}<div class="winner"><span class="nm" style="color:#e6c97a">${w.name}</span><span class="tm"><b class="num" id="cnt">0</b><small>ms to confirm your ${esc(rd.side)}</small></span></div><ol class="board">${ranked.map((v, i) => row(v, i, i + 1)).join('')}${rest.map((v, i) => row(v, ranked.length + i, 0)).join('')}</ol>${foot ? `<p class="rfoot">${foot}</p>` : ''}</div>`;
+  countUp($('#cnt'), wc);
+}
+function lock(on) { for (const b of document.querySelectorAll('.fire,.ghost')) b.disabled = on; }
+let lastSide = 'short';
+async function waitQuotes(maxMs) {
+  const end = now() + maxMs;
+  while (now() < end && VENUES.some(v => !v.px.a.length)) await sleep(100);
+}
+function startReplay(rd) {
+  const confs = VENUES.map(v => rd.res[v.id].conf).filter(c => c != null), apis = VENUES.map(v => rd.res[v.id].api).filter(c => c != null);
+  const max = confs.length ? Math.max(...confs) : apis.length ? Math.max(...apis) * 1.5 : 500, min = confs.length ? Math.min(...confs) : max;
+  const T = Math.max(40, max * 1.03), p = Math.max(1, Math.min(3.2, Math.log(Math.max(1, min) / T) / Math.log(0.2)));
+  replay = { start: now(), pre: 800, run: 6800, T, p, rd, fin: {}, revealed: false, flashAt: null };
+  for (const v of VENUES) v.ph = Math.random() * 6;
+}
+async function go(side, n) {
+  if (racing) return; lastSide = side; lock(true);
+  try {
+    await waitQuotes(3500);
+    $('#verdict').innerHTML = `<div class="wait">${server ? 'Sending real orders to five venues' : 'Racing'}</div>`;
+    let rd; for (let i = 0; i < n; i++) { rd = await measure(side); rd.no = ++raceNo; $('#raceNo').textContent = 'Race ' + (raceNo + 1); noteFor(rd); if (i < n - 1) await sleep(350); }
+    $('#verdict').innerHTML = '';
+    startReplay(rd);
+    const rp = replay; setTimeout(() => { if (replay === rp && !rp.revealed) { rp.revealed = true; reveal(rd); } }, rp.pre + rp.run + 600); // timers still run in a background tab
+  } finally { lock(false); }
+}
+$('#long').onclick = () => go('long', 1);
+$('#short').onclick = () => go('short', 1);
+$('#x10').onclick = () => go(lastSide, 10);
+// In server mode the real DreamDEX transaction comes from the server's testnet wallet, so the
+// browser burner is not created at all and the panel reports the server wallet instead.
+async function paintServerWallet() {
+  const el = $('#burner'), a = server.venues.dreamdex.burner; if (!el) return;
+  if (!a) { el.innerHTML = '<b>DreamDEX real transactions: OFF.</b> The server has no testnet wallet configured.'; return; }
+  let bal = null; try { bal = Number(BigInt(await dream.rpc('eth_getBalance', [a, 'latest'])) / 10n ** 12n) / 1e6; } catch {}
+  el.innerHTML = `<b>DreamDEX real transactions: ${bal == null ? 'checking...' : bal > 0.01 ? 'ON' : 'OFF (wallet is empty)'}.</b> In this mode they are sent by our server, not by your browser, from a Somnia Tokyo testnet wallet.<br>Address: <b class="num">${a}</b>${bal == null ? '' : ` · Balance: <b class="num">${bal} STT</b>`}`;
+}
+fetch('/api/health', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(h => {
+  if (!h || !h.ok) { initBurner(); return; }
+  server = h;
+  const p = $('#pReal'); p.textContent = 'real orders · measured from ' + h.region; p.classList.add('on');
+  $('#kick').textContent = 'Race day · RWA stock perps · 5 venues · real orders';
+  setTimeout(paintServerWallet, 2500); setInterval(() => { if (!document.hidden && !racing) paintServerWallet(); }, 20000);
+}).catch(() => initBurner());
+window.__race = { VENUES, V, go, burner, realTx, get round() { return round; } };
+</script>
+</body>
+</html>

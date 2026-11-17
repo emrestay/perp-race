@@ -1,0 +1,21 @@
+// Offline check: load the WASM signer, make a throwaway key, sign an order. Nothing touches the network.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'lib', 'lighter-signer');
+await import(path.join(dir, 'wasm_exec.js'));
+const go = new globalThis.Go();
+const { instance } = await WebAssembly.instantiate(fs.readFileSync(path.join(dir, 'lighter-signer.wasm')), go.importObject);
+go.run(instance);
+const L = globalThis;
+const fns = ['GenerateAPIKey', 'CreateClient', 'CreateAuthToken', 'SignCreateOrder', 'SignCancelOrder'].map(f => f + ':' + typeof L[f]);
+console.log(fns.join(' '));
+const k = L.GenerateAPIKey();
+console.log('key fields', Object.keys(k), 'priv len', String(k.privateKey || '').length, 'pub len', String(k.publicKey || '').length);
+const c = L.CreateClient('', k.privateKey, 304, 4, 12345); console.log('CreateClient', JSON.stringify(c));
+const t0 = performance.now();
+const o = L.SignCreateOrder(112, 777, 150, 39700, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 12345);
+console.log('sign ms', (performance.now() - t0).toFixed(1), 'error', o.error, 'txType', o.txType, 'txHash', String(o.txHash).slice(0, 18), 'txInfo', String(o.txInfo).slice(0, 260));
+const a = L.CreateAuthToken(0, 4, 12345); console.log('auth', a.error || String(a.authToken).slice(0, 40) + '...');
+const cx = L.SignCancelOrder(112, 777, 0, 2, 4, 12345); console.log('cancel', cx.error, cx.txType, String(cx.txInfo).slice(0, 140));
+process.exit(0);

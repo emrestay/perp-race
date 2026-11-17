@@ -1,0 +1,13 @@
+{
+  "name": "perp-race",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "node dev-server.mjs",
+    "selftest": "node scripts/selftest.mjs"
+  },
+  "dependencies": {
+    "viem": "2.21.55"
+  }
+}

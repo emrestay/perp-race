@@ -1,0 +1,16 @@
+# dependencies and local state
+node_modules
+.vercel
+.claude
+runs
+.DS_Store
+
+# secrets: never commit keys, use the Keychain helper or your host's env settings
+.env
+.env.*
+!.env.example
+
+# local backups
+*.bak
+index.before-*.html
+v1-basic.html
