@@ -4,6 +4,15 @@ import { agentOf } from '../lib/hyperliquid.js';
 import { arcusCred } from '../lib/arcus.js';
 import { lighterCred, loadSigner } from '../lib/lighter.js';
 import { asterSigner, asterBalance } from '../lib/aster.js';
+import { risexCred } from '../lib/risex.js';
+
+// ?deep=1: ask RISEx whether the session key is registered and active for the account (a read, never an order).
+async function risexDeep(c) {
+  try {
+    const j = await (await fetch(`https://api.rise.trade/v1/auth/session-key-status?account=${c.account}&signer=${c.signer.address}`, { cache: 'no-store' })).json();
+    const d = j.data || {}; return { ok: d.status === 1, status: d.status ?? null, description: d.status_description ?? j.message ?? null };
+  } catch (e) { return { ok: false, error: e.message }; }
+}
 
 // ?deep=1: ask Lighter whether the stored API key is registered for the account (a signed read, never an order).
 async function lighterDeep(cred) {
@@ -19,7 +28,7 @@ async function lighterDeep(cred) {
 }
 
 export async function GET(request) {
-  const env = process.env, b = burner(env), agent = agentOf(env), ar = arcusCred(env), li = lighterCred(env), as = asterSigner(env);
+  const env = process.env, b = burner(env), agent = agentOf(env), ar = arcusCred(env), li = lighterCred(env), as = asterSigner(env), rx = risexCred(env);
   const body = {
     ok: true, region: env.VERCEL_REGION || 'local',
     venues: {
@@ -28,17 +37,19 @@ export async function GET(request) {
       arcus: { realOrders: !!ar.cred, apiKey: ar.cred ? ar.cred.apiKey : null, address: ar.cred ? ar.cred.address : null, accountIndex: ar.cred ? ar.cred.ai : null, keyError: ar.credError, network: env.ARCUS_ENV === 'testnet' ? 'testnet' : 'mainnet' },
       lighter: { realOrders: !!li.cred, accountIndex: li.cred ? li.cred.ai : null, apiKeyIndex: li.cred ? li.cred.ki : null, keyError: li.credError, network: 'mainnet' },
       aster: { realOrders: !!as, signer: as ? as.address : null, keyError: env.ASTER_SIGNER_KEY && !as ? 'ASTER_SIGNER_KEY is not a valid private key' : null, network: 'mainnet' },
+      risex: { realOrders: !!rx, account: rx ? rx.account : null, signer: rx ? rx.signer.address : null, keyError: (env.RISEX_SIGNER_KEY || env.RISEX_ACCOUNT) && !rx ? 'RISEX_SIGNER_KEY and RISEX_ACCOUNT are both required' : null, network: 'mainnet' },
     },
   };
   // On the public production site this endpoint says only what the page needs: no account identifiers,
   // no balances and no signed checks.
   if (env.VERCEL_ENV === 'production') {
     const pub = { ok: true, region: body.region, venues: { dreamdex: { network: body.venues.dreamdex.network, burner: body.venues.dreamdex.burner } } };
-    for (const k of ['hyperliquid', 'arcus', 'lighter', 'aster']) pub.venues[k] = { realOrders: body.venues[k].realOrders };
+    for (const k of ['hyperliquid', 'arcus', 'lighter', 'aster', 'risex']) pub.venues[k] = { realOrders: body.venues[k].realOrders };
     return new Response(JSON.stringify(pub), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
   }
   const deep = request && new URL(request.url).searchParams.get('deep') === '1';
   if (deep && li.cred) body.venues.lighter.check = await lighterDeep(li.cred);
   if (deep && as) body.venues.aster.check = await asterBalance(env);
+  if (deep && rx) body.venues.risex.check = await risexDeep(rx);
   return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 }

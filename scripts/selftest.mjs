@@ -5,9 +5,24 @@ import { createPublicKey, verify, generateKeyPairSync } from 'node:crypto';
 import { signL1, hlPrice, hlSize } from '../lib/hyperliquid.js';
 import { arcusKey, arcusSign, placePayload, cancelPayload } from '../lib/arcus.js';
 import { msgpack } from '../lib/util.js';
+import { packOrder, placeHash, risexPermit, risexCred } from '../lib/risex.js';
+import { keccak256, toBytes, recoverTypedDataAddress, getAddress } from 'viem';
 
 let fails = 0; const ok = (name, cond, extra = '') => { console.log((cond ? 'PASS ' : 'FAIL ') + name + (extra ? '  ' + extra : '')); if (!cond) fails++; };
 const hex = u => Buffer.from(u).toString('hex');
+
+// RISEx: order packing and permit, checked against developer.rise.trade/reference/integration
+{
+  const od = packOrder({ marketId: 1, sizeSteps: 200, priceTicks: 550248, sell: false, postOnly: true, limit: true, tif: 0 });
+  ok('risex order packing (docs BTC example)', od === ((1n << 70n) | (200n << 38n) | (550248n << 14n) | (34n << 6n) | (1n << 1n)));
+  ok('risex VerifyWitness typehash matches the mainnet contract value in the docs', keccak256(toBytes('VerifyWitness(address account,address target,bytes32 hash,uint48 nonceAnchor,uint8 nonceBitmap,uint32 deadline)')) === '0x055e6bcbf2ba5ff1c2ba5dc95b6648a5de6aaab3185251a34e3b88c11e116821');
+  const k = generatePrivateKey(), cred = risexCred({ RISEX_SIGNER_KEY: k, RISEX_ACCOUNT: '0x1111111111111111111111111111111111111111' });
+  const domain = { name: 'RISEx', version: '1', chainId: 4153, verifyingContract: '0x0D919DAA3f12AE715744Eb648c00066c5DBd66f0' }, router = getAddress('0xaadde0cea454f2bcb26f46ed54c5709b7bb34a7e'), h = placeHash(od);
+  const pm = await risexPermit(cred, domain, router, h, 5, 3), raw = Buffer.from(pm.signature, 'base64');
+  const rec = await recoverTypedDataAddress({ domain, primaryType: 'VerifyWitness', signature: '0x' + raw.toString('hex'), message: { account: cred.account, target: router, hash: h, nonceAnchor: 5n, nonceBitmap: 3, deadline: pm.deadline },
+    types: { VerifyWitness: [{ name: 'account', type: 'address' }, { name: 'target', type: 'address' }, { name: 'hash', type: 'bytes32' }, { name: 'nonceAnchor', type: 'uint48' }, { name: 'nonceBitmap', type: 'uint8' }, { name: 'deadline', type: 'uint32' }] } });
+  ok('risex permit: base64, 65 bytes, recovers to the session key', raw.length === 65 && rec === cred.signer.address && pm.nonce_anchor === '5' && pm.nonce_bitmap_index === 3);
+}
 
 // msgpack: hand-checked encodings
 ok('msgpack fixmap/str/bool', hex(msgpack({ a: 1, b: true, p: '100' })) === '83a16101a162c3a170a3313030');

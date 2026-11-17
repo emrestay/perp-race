@@ -5,7 +5,7 @@
 //   node scripts/secrets.mjs new-burner      makes a Somnia testnet burner key, stores it, prints its address
 //   node scripts/secrets.mjs delete NAME
 import { execFileSync, spawnSync } from 'node:child_process';
-const NAMES = ['DREAMDEX_KEY', 'HL_AGENT_KEY', 'HL_ENV', 'ARCUS_API_SECRET', 'ARCUS_ADDRESS', 'ARCUS_ACCOUNT_INDEX', 'ARCUS_ENV', 'LIGHTER_API_PRIVATE_KEY', 'LIGHTER_ACCOUNT_INDEX', 'LIGHTER_API_KEY_INDEX', 'ASTER_SIGNER_KEY'];
+const NAMES = ['DREAMDEX_KEY', 'HL_AGENT_KEY', 'HL_ENV', 'ARCUS_API_SECRET', 'ARCUS_ADDRESS', 'ARCUS_ACCOUNT_INDEX', 'ARCUS_ENV', 'LIGHTER_API_PRIVATE_KEY', 'LIGHTER_ACCOUNT_INDEX', 'LIGHTER_API_KEY_INDEX', 'ASTER_SIGNER_KEY', 'RISEX_ACCOUNT', 'RISEX_SIGNER_KEY'];
 const SEC = '/usr/bin/security', [cmd, name] = process.argv.slice(2);
 const has = n => { try { execFileSync(SEC, ['find-generic-password', '-s', 'perp-race', '-a', n], { stdio: 'ignore' }); return true; } catch { return false; } };
 const need = () => { if (!NAMES.includes(name)) { console.error('NAME must be one of: ' + NAMES.join(', ')); process.exit(1); } };
