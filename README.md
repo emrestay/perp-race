@@ -18,10 +18,12 @@ The code is open so that anyone can check what is measured and run it themselves
 |---|---|---|---|---|
 | DreamDEX | Somnia Tokyo mainnet | limit order via `eth_sendRawTransactionSync`, cancelled right after (untimed) | the transaction receipt | tx on the Somnia explorer |
 | Hyperliquid | mainnet | IOC order over the WebSocket `post` action | Hyperliquid's order response | tx on the Hyperliquid explorer |
-| Arcus | mainnet | IOC order over WebSocket `placeOrder` | final order state on the public `orders` stream | order id |
-| Lighter | mainnet | IOC order via REST `sendTx` | final order state on the `account_all_orders` stream | tx hash |
-| Aster | mainnet | IOC order via REST `/fapi/v3/order` | the REST response with the final status | order id |
+| Arcus | mainnet | IOC order over WebSocket `placeOrder` | final order state on the public `orders` stream | the order in Arcus's public order list for the account (`/v1/orders?address=`) |
+| Lighter | mainnet | IOC order via REST `sendTx` | final order state on the `account_all_orders` stream | the transaction on Lighter's public API (`/api/v1/tx?by=hash`), kept for a few minutes only |
+| Aster | mainnet | IOC order via REST `/fapi/v3/order` | the REST response with the final status | Aster's own reply (no public record of a single order) |
 | RISEx | RISE Chain mainnet | IOC order via REST `/v1/orders/place`, signed with an EIP-712 permit by a session key (post-only limit, cancelled after, on post-only markets) | the REST response after the order transaction executed | tx on the RISE explorer |
+
+The results board also shows each venue's own reply for its order (a "reply" button).
 
 Each round also times one small request on the same open connection (the "network" time), so the network part and the venue part can be told apart.
 

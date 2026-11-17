@@ -132,6 +132,13 @@ code{font:13px var(--mono);background:#f1ebe0;padding:1px 5px;border-radius:6px}
 .burner{margin-top:12px;padding:12px 14px;border:2px dashed var(--line);border-radius:14px;font-size:14.5px;color:var(--mute);word-break:break-all}
 .burner b{color:var(--ink)}
 .copy{margin-left:8px;padding:2px 8px;border-radius:8px;border:2px solid var(--line);background:#fff;color:var(--ink);font:600 12px var(--font)}
+.rep{margin-left:6px;padding:1px 8px;border-radius:999px;border:2px solid var(--line);background:#fff;color:var(--ink);font:600 11.5px var(--font);vertical-align:1px}
+.pf small{color:var(--mute);font:500 11px var(--font)}
+dialog{border:0;border-radius:22px;padding:18px 20px;max-width:min(560px,92vw);background:var(--card);color:var(--ink);box-shadow:0 20px 50px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(40,30,20,.35)}
+dialog h3{margin:0 0 4px;font:700 20px var(--font)}
+dialog pre{background:#f1ebe0;border-radius:12px;padding:12px;font:12.5px/1.5 var(--mono);overflow:auto;max-height:50vh;white-space:pre-wrap;word-break:break-all}
+.rw{margin:0 0 8px;color:var(--mute);font-size:14px}
 footer{margin-top:30px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--mute);font-size:15px}
 footer a{font-weight:600}
 @media (max-width:900px){.hero,.grid2{grid-template-columns:1fr}.board li{grid-template-columns:44px 1fr auto;row-gap:4px}.board .mg{display:none}.board .tg{grid-column:2}.board .pf{grid-column:2/-1}}
@@ -222,6 +229,7 @@ footer a{font-weight:600}
   </details>
 
   <footer><span>Built by Somnia DevRel. DreamDEX runs on Somnia, so read the method before you trust the scoreboard.</span><a id="src" href="https://github.com/emrestay/perp-race" target="_blank" rel="noopener">Source code on GitHub ↗</a></footer>
+  <dialog id="rep"><h3 id="repT">Reply</h3><p class="rw">The record the venue sent back for this order, exactly as received (selected fields).</p><pre id="repB"></pre><p class="rw" id="repW"></p><form method="dialog"><button class="ghost">Close</button></form></dialog>
 </main>
 
 <script>
@@ -259,11 +267,11 @@ const VENUES = [
     pingWs: 'wss://api.hyperliquid.xyz/ws', blockWs: 'wss://rpc.hyperliquid.xyz/ws',
     m: ['A real order on mainnet, signed by an API wallet', 'Hyperliquid replies that the order was processed', 'The transaction, on the Hyperliquid explorer'] },
   { id: 'arcus', name: 'Arcus', short: 'Arcus', badge: 'A', sub: 'mainnet', color: '#e5a21a', coat: '#efd9b8', mane: '#a07a52', kind: 'api', make: arcus, pingUrl: 'https://api.arcus.xyz/v1/time', ws: 'wss://api.arcus.xyz/v1/ws',
-    m: ['A real order on mainnet', "The order reaches its final state on Arcus's public order stream", 'An order id. Matching is off-chain, so a single order has no public transaction'] },
+    m: ['A real order on mainnet', "The order reaches its final state on Arcus's public order stream", "The order, in Arcus's public order list for our account (matching is off-chain, so there is no transaction)"] },
   { id: 'lighter', name: 'Lighter', short: 'Lighter', badge: 'L', sub: 'mainnet', color: '#3f7be0', coat: '#8b5a3c', mane: '#3d2416', kind: 'api', make: lighter, ws: 'wss://mainnet.zklighter.elliot.ai/stream',
-    m: ['A real order on mainnet', 'The order reaches its final state on the account order stream', 'A transaction hash only. Lighter keeps no lasting public record of an order that did not trade'] },
+    m: ['A real order on mainnet', 'The order reaches its final state on the account order stream', "The transaction, on Lighter's public API. Lighter keeps it for a few minutes only"] },
   { id: 'aster', name: 'Aster', short: 'Aster', badge: 'As', sub: 'mainnet', color: '#ee6a3a', coat: '#e0a96d', mane: '#7a4a26', kind: 'api', make: aster, ws: 'wss://fstream.asterdex.com/ws',
-    m: ['A real order on mainnet', "Aster replies with the order's final state", 'An order id. The API returns no transaction hash for an order'] },
+    m: ['A real order on mainnet', "Aster replies with the order's final state", "Aster's own reply. Aster has no public record of a single order"] },
   { id: 'risex', name: 'RISEx', short: 'RISEx', badge: 'R', sub: 'RISE Chain mainnet', color: '#1fa6c9', coat: '#b8b2aa', mane: '#4b4540', kind: 'api', make: risex, ws: 'wss://ws.rise.trade/ws',
     m: ['A real order on mainnet, signed by an API wallet (session key)', 'RISEx replies after the order transaction has executed, with its result', 'The transaction, on the RISE explorer'] },
 ];
@@ -706,7 +714,7 @@ async function measureServer(side) {
   if (j.error === 'busy') { await sleep(4000); try { j = await (await fetch(`/api/race?market=${stock}&side=${side}${dry}`, { cache: 'no-store' })).json(); } catch (e) { j = { error: e.message, venues: {} }; } }
   for (const v of VENUES) {
     const s = (j.venues || {})[v.id] || { error: j.error || 'no data' };
-    rd.res[v.id] = { unlisted: !!s.unlisted, api: s.network, blk: s.floor, conf: s.confirmed, basis: s.basis, kind: s.kind, docsMs: s.docsMs, err: s.error, status: s.status, exec: s.execMicros, tx: s.tx, ack: s.ack, maker: s.maker, proof: s.proof };
+    rd.res[v.id] = { unlisted: !!s.unlisted, api: s.network, blk: s.floor, conf: s.confirmed, basis: s.basis, kind: s.kind, docsMs: s.docsMs, err: s.error, status: s.status, exec: s.execMicros, tx: s.tx, ack: s.ack, maker: s.maker, proof: s.proof, reply: s.reply };
   }
   rd.region = j.region; rd.cached = !!(j.cached || j.shared) || (j.at && Date.now() - j.at > 6000); // also true when the CDN served a recent race
   const max = finishRound(rd); rd.t0 = now() - max - 150;
@@ -759,16 +767,18 @@ function reveal(rd) {
   if (!w) { el.innerHTML = `<div class="result">${head}<p class="rfoot">No venue confirmed this round. Check the connection and try again.</p></div>`; return; }
   const ranked = VENUES.filter(v => rd.res[v.id].conf != null).sort((a, b) => rd.res[a.id].conf - rd.res[b.id].conf), rest = VENUES.filter(v => rd.res[v.id].conf == null);
   const wc = rd.res[w.id].conf;
-  const proof = r => { const p = r.proof; if (!p) return '<span class="pf dim">·</span>';
-    return p.url ? `<span class="pf"><a href="${esc(p.url)}" target="_blank" rel="noopener" title="${esc(p.where)}">tx ${esc(shortId(p.id))} ↗</a></span>` : `<span class="pf dim" title="${esc(p.where)}">${p.kind === 'tx' ? 'tx' : 'order'} ${esc(shortId(p.id))}</span>`; };
+  const proof = (r, v) => { const p = r.proof, rep = r.reply ? ` <button class="rep" data-v="${v.id}" title="What ${esc(v.name)} replied">reply</button>` : ''; if (!p) return `<span class="pf dim">·${rep}</span>`;
+    const lbl = `${p.kind === 'tx' ? 'tx' : 'order'} ${esc(shortId(p.id))}`;
+    return p.url ? `<span class="pf"><a href="${esc(p.url)}" target="_blank" rel="noopener" title="${esc(p.where)}">${lbl} ↗</a>${p.short ? ' <small title="' + esc(p.where) + '">few min</small>' : ''}${rep}</span>` : `<span class="pf dim" title="${esc(p.where)}">${lbl}${rep}</span>`; };
   const row = (v, i, n) => { const r = rd.res[v.id], [cls, txt] = tagOf(r);
     const time = r.unlisted ? 'not listed' : r.conf != null ? (r.basis === 'docs' ? '≈ ' : '') + fms(r.conf) : r.api != null ? 'DNF' : 'no answer';
     const mg = n === 1 ? 'winner' : r.conf != null ? '+' + fms(r.conf - wc) : '·';
-    return `<li class="${n === 1 ? 'first' : ''}" style="--c:${v.color};--d:${(0.25 + i * 0.1).toFixed(2)}s"><span class="pos">${n ? RANK[n] : '·'}</span><span class="hn"><i></i><span>${v.name}<small>${esc(v.sub)}</small></span></span><span class="rt num">${time}</span><span class="mg">${mg}</span><span class="tg ${cls}"${r.err ? ` title="${esc(r.err)}"` : ''}>${r.unlisted ? 'not listed' : r.api == null ? 'no answer' : txt}</span>${proof(r)}</li>`; };
+    return `<li class="${n === 1 ? 'first' : ''}" style="--c:${v.color};--d:${(0.25 + i * 0.1).toFixed(2)}s"><span class="pos">${n ? RANK[n] : '·'}</span><span class="hn"><i></i><span>${v.name}<small>${esc(v.sub)}</small></span></span><span class="rt num">${time}</span><span class="mg">${mg}</span><span class="tg ${cls}"${r.err ? ` title="${esc(r.err)}"` : ''}>${r.unlisted ? 'not listed' : r.api == null ? 'no answer' : txt}</span>${proof(r, v)}</li>`; };
   const foot = rd.server ? (rd.cached ? 'This result was reused from a race moments ago.' : '')
     : rd.res.dreamdex.basis === 'real' ? 'Measured in your browser. A real transaction on DreamDEX testnet, estimates elsewhere.' : 'Measured in your browser. Nothing was signed or sent.';
   el.innerHTML = `<div class="result">${head}<div class="winner"><span class="cup">🏆</span><span class="nm" style="color:${w.color}">${w.name}</span><span class="tm"><b class="num" id="cnt">0</b><small>ms to confirm your ${esc(rd.side)}</small></span></div><ol class="board">${ranked.map((v, i) => row(v, i, i + 1)).join('')}${rest.map((v, i) => row(v, ranked.length + i, 0)).join('')}</ol>${foot ? `<p class="rfoot">${foot}</p>` : ''}</div>`;
   countUp($('#cnt'), wc);
+  for (const b of el.querySelectorAll('.rep')) b.onclick = () => { const v = V[b.dataset.v], r = rd.res[v.id]; $('#repT').textContent = v.name + ' replied'; $('#repB').textContent = JSON.stringify(r.reply, null, 2); $('#repW').textContent = r.proof && r.proof.where ? r.proof.where + '.' : ''; $('#rep').showModal(); };
 }
 function lock(on) { for (const b of document.querySelectorAll('.fire,.ghost')) b.disabled = on; }
 let lastSide = 'short';
