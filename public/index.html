@@ -156,18 +156,17 @@ footer a{font-weight:600}
           <g fill="#f7a8c4" stroke="#5b3f8f" stroke-width="3"><path d="M470 22c-6-8-18 0-10 9l10 9 10-9c8-9-4-17-10-9z"/><path d="M52 112c-5-7-15 0-8 7l8 8 8-8c7-7-3-14-8-7z"/></g>
           <path d="M150 128q110 22 220 0" fill="none" stroke="#5b3f8f" stroke-width="5" stroke-linecap="round" opacity=".35"/>
         </svg>
-        <span class="kicker" id="kick">RWA stock perps · real orders</span>
+        <span class="kicker" id="kick">Crypto perps · real orders on mainnet</span>
         <h1>Here we go again.</h1>
-        <p class="lede">Perp DEXs line up. <b>One real order each</b>, fired at the same instant for the stock you pick. The first venue to confirm your order wins. Every result links to its proof.</p>
+        <p class="lede">Perp DEXs line up. <b>One real order each</b>, fired at the same instant on the market you pick. The first venue to confirm your order wins. Every result links to its proof.</p>
       </div>
       <div class="ticket">
         <div class="thead"><span>Your ticket</span><span id="raceNo">Race 1</span></div>
-        <span class="lbl">Choose your stock</span>
+        <span class="lbl">Choose a market</span>
         <div class="chips" id="chips"></div>
         <div class="pxrow">
-          <div><span class="lbl" id="pxl">TSLA-PERP mark on DreamDEX</span><span id="px">...</span></div>
-          <label><span class="lbl">Size (shares)</span><input id="size" type="number" min="0.1" step="0.1" value="5"></label>
-        </div>
+          <div><span class="lbl" id="pxl">BTC-PERP mark on DreamDEX</span><span id="px">...</span></div>
+          </div>
         <div class="btns">
           <button id="long" class="fire long">Long</button>
           <button id="short" class="fire short">Short</button>
@@ -181,7 +180,7 @@ footer a{font-weight:600}
 </section>
 <main>
   <section class="course">
-    <div class="chead"><h2 id="stitle">TSLA-PERP race</h2><div class="call" id="call">The ponies are warming up</div></div>
+    <div class="chead"><h2 id="stitle">BTC-PERP race</h2><div class="call" id="call">The ponies are warming up</div></div>
     <canvas id="track"></canvas>
     <div class="cfoot"><span>Each pony crosses the line at the moment its venue confirmed the order.</span><span>Slow motion replay · the clock shows real milliseconds</span></div>
   </section>
@@ -189,7 +188,7 @@ footer a{font-weight:600}
 
   <section class="grid2">
     <div class="panel">
-      <h3 class="ptitle">Live prices <small id="toteT">TSLA-PERP</small></h3>
+      <h3 class="ptitle">Live prices <small id="toteT">BTC-PERP</small></h3>
       <div class="tote" id="tote"></div>
     </div>
     <div class="panel">
@@ -213,7 +212,7 @@ footer a{font-weight:600}
 
   <details class="panel">
     <summary>How each venue is measured</summary>
-    <p>Every venue gets the same treatment wherever it allows it: a real order for the stock you picked, sized near the venue's minimum and priced a little away from the market so that it cannot trade. On the mainnet venues the order is immediate-or-cancel, the same path a market order takes.</p>
+    <p>Every venue gets the same treatment wherever it allows it: a real order on the market you picked, sized near the venue's minimum and priced a little away from the market so that it cannot trade. Every venue, DreamDEX included, runs on mainnet. Elsewhere the order is immediate-or-cancel, the same path a market order takes.</p>
     <div class="tw"><table class="m">
       <thead><tr><th>Venue</th><th>What we send</th><th>When the clock stops</th><th>Proof you can check</th></tr></thead>
       <tbody id="method"></tbody>
@@ -232,31 +231,31 @@ const now = () => performance.now();
 const $ = s => document.querySelector(s);
 const med = a => { const s = a.filter(x => x != null).sort((x, y) => x - y); if (!s.length) return null; const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 const fms = x => x == null ? '·' : Math.round(x).toLocaleString('en-US') + ' ms';
-const fpx = p => p == null ? '·' : p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fpx = p => { if (p == null) return '·'; const d = p < 1 ? 5 : p < 20 ? 4 : 2; return p.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); };
 const sleep = t => new Promise(r => setTimeout(r, t));
 const FONT = '"Fredoka",ui-rounded,system-ui,sans-serif', MONO = '"JetBrains Mono",ui-monospace,Menlo,monospace';
 const HL_DOC_MS = 200; // hyperliquid.gitbook.io/hyperliquid-docs/hypercore/overview: median end-to-end, co-located
 const LIGHTER_DOC_MS = 300; // docs.lighter.xyz/trading/trading-fees: taker latency, standard account
 let server = null; // set when this page is served with its /api (real orders, measured from the server)
 
-const STOCKS = {
-  TSLA: { pool: '0xe3458a654ce3d839b96581fb46b40a0c37d4cd61', hl: 'xyz:TSLA', arcus: 'TSLA-USD', aster: 'tslausdt', lighter: 112, risex: 32 },
-  COIN: { pool: '0xd4fdb2cf877507d401b6c2632bdcb79ebf1ceaf7', hl: 'xyz:COIN', arcus: 'COIN-USD', aster: 'coinusdt', lighter: 109, risex: null },
-  MSTR: { pool: '0xaf690c35d4254d63143d5f35b415b8228c4873b6', hl: 'xyz:MSTR', arcus: 'MSTR-USD', aster: 'mstrusdt', lighter: 122, risex: 29 },
-  GOOGL: { pool: '0xaa7f246114de23d0e261f01ffe74c6b632e277ae', hl: 'xyz:GOOGL', arcus: 'GOOGL-USD', aster: 'googlusdt', lighter: 116, risex: 42 },
-  AMD: { pool: '0x3b844ef76971c6f2274d97eb45b1e2cd3cea2708', hl: 'xyz:AMD', arcus: 'AMD-USD', aster: 'amdusdt', lighter: 138, risex: 55 },
-  HOOD: { pool: '0x26d79cd2753e1695bb41dff33c2dd69049a44ee3', hl: 'xyz:HOOD', arcus: 'HOOD-USD', aster: 'hoodusdt', lighter: 108, risex: 34 },
-  INTC: { pool: '0xc8442ac3e855c4b693373bcafb5b214ef81c3519', hl: 'xyz:INTC', arcus: 'INTC-USD', aster: 'intcusdt', lighter: 137, risex: 28 },
-  MRVL: { pool: '0x2140de5c86333b62dae08b74adb32aa0c7c5195a', hl: 'xyz:MRVL', arcus: 'MRVL-USD', aster: 'mrvlusdt', lighter: 174, risex: null },
+const STOCKS = { // crypto perps listed on DreamDEX mainnet and on every other venue (see lib/markets.js)
+  BTC: { pool: '0x143ebd385cc90bd178086a8f432c9084f889ef30', hl: 'BTC', arcus: 'BTC-USD', aster: 'btcusdt', lighter: 1, risex: 1 },
+  ETH: { pool: '0x440992f9910d635201209deb679f8f0c57a6a758', hl: 'ETH', arcus: 'ETH-USD', aster: 'ethusdt', lighter: 0, risex: 2 },
+  SOL: { pool: '0x8508a90867806d2118277372d704b97efde055b3', hl: 'SOL', arcus: 'SOL-USD', aster: 'solusdt', lighter: 2, risex: 4 },
+  HYPE: { pool: '0x81151ad4cdf422fd660a04accb6693c0486e6ccf', hl: 'HYPE', arcus: 'HYPE-USD', aster: 'hypeusdt', lighter: 24, risex: 5 },
+  XRP: { pool: '0x4ac6ac5824cf9de6dfa67d37b431c5d8016360a7', hl: 'XRP', arcus: 'XRP-USD', aster: 'xrpusdt', lighter: 7, risex: 6 },
+  DOGE: { pool: '0x6441273abb267b06e88a62b06e3b2995aade65ee', hl: 'DOGE', arcus: 'DOGE-USD', aster: 'dogeusdt', lighter: 3, risex: 14 },
+  BNB: { pool: '0x86818cc4e82013eab08c9dac6573ddf27a8cab6b', hl: 'BNB', arcus: 'BNB-USD', aster: 'bnbusdt', lighter: 25, risex: 3 },
+  ZEC: { pool: '0xfc0f39f888d6d4f56848786cb494ca8c74213b94', hl: 'ZEC', arcus: 'ZEC-USD', aster: 'zecusdt', lighter: 90, risex: 8 },
 };
-let stock = 'TSLA';
+let stock = 'BTC';
 
 // color = the venue, coat and mane = its pony; m = [what we send, when the clock stops, proof]
 const VENUES = [
-  { id: 'dreamdex', name: 'DreamDEX', short: 'DreamDEX', badge: 'D', sub: 'Somnia Tokyo testnet', color: '#8e5cf0', coat: '#d98a4e', mane: '#6b3a1f', kind: 'chain', make: somnia,
-    ws: 'wss://api.hideki.infra.testnet.somnia.network/ws', sendWs: 'wss://send.hideki.infra.testnet.somnia.network/ws',
-    m: ['A real limit order on the Somnia Tokyo testnet. It rests on the book and is cancelled right after', "The receipt of the order's transaction comes back", 'The transaction, on the Somnia explorer'] },
-  { id: 'hyperliquid', name: 'Hyperliquid', short: 'Hyperliq.', badge: 'H', sub: 'HIP-3 market, mainnet', color: '#22b08f', coat: '#c47a45', mane: '#5a3220', kind: 'chain', make: hyperliquid,
+  { id: 'dreamdex', name: 'DreamDEX', short: 'DreamDEX', badge: 'D', sub: 'Somnia Tokyo mainnet', color: '#8e5cf0', coat: '#d98a4e', mane: '#6b3a1f', kind: 'chain', make: somnia,
+    ws: 'wss://api.tokyo.infra.mainnet.somnia.network/ws', sendWs: 'wss://send.tokyo.infra.mainnet.somnia.network/ws',
+    m: ['A real limit order on Somnia Tokyo mainnet. It rests on the book and is cancelled right after', "The receipt of the order's transaction comes back", 'The transaction, on the Somnia explorer'] },
+  { id: 'hyperliquid', name: 'Hyperliquid', short: 'Hyperliq.', badge: 'H', sub: 'mainnet', color: '#22b08f', coat: '#c47a45', mane: '#5a3220', kind: 'chain', make: hyperliquid,
     pingWs: 'wss://api.hyperliquid.xyz/ws', blockWs: 'wss://rpc.hyperliquid.xyz/ws',
     m: ['A real order on mainnet, signed by an API wallet', 'Hyperliquid replies that the order was processed', 'The transaction, on the Hyperliquid explorer'] },
   { id: 'arcus', name: 'Arcus', short: 'Arcus', badge: 'A', sub: 'mainnet', color: '#e5a21a', coat: '#efd9b8', mane: '#a07a52', kind: 'api', make: arcus, pingUrl: 'https://api.arcus.xyz/v1/time', ws: 'wss://api.arcus.xyz/v1/ws',
@@ -266,7 +265,7 @@ const VENUES = [
   { id: 'aster', name: 'Aster', short: 'Aster', badge: 'As', sub: 'mainnet', color: '#ee6a3a', coat: '#e0a96d', mane: '#7a4a26', kind: 'api', make: aster, ws: 'wss://fstream.asterdex.com/ws',
     m: ['A real order on mainnet', "Aster replies with the order's final state", 'An order id. The API returns no transaction hash for an order'] },
   { id: 'risex', name: 'RISEx', short: 'RISEx', badge: 'R', sub: 'RISE Chain mainnet', color: '#1fa6c9', coat: '#b8b2aa', mane: '#4b4540', kind: 'api', make: risex, ws: 'wss://ws.rise.trade/ws',
-    m: ['A real order on mainnet, signed by an API wallet (session key). Not every stock is listed', 'RISEx replies after the order transaction has executed, with its result', 'The transaction, on the RISE explorer'] },
+    m: ['A real order on mainnet, signed by an API wallet (session key)', 'RISEx replies after the order transaction has executed, with its result', 'The transaction, on the RISE explorer'] },
 ];
 
 /* ---------- helpers ---------- */
@@ -363,7 +362,7 @@ function hyperliquid(v) {
   });
   const P = pinger(() => a.send({ method: 'ping' }));
   let midId = 1000;
-  const askMid = () => a.send({ method: 'post', id: ++midId, request: { type: 'info', payload: { type: 'allMids', dex: 'xyz' } } });
+  const askMid = () => a.send({ method: 'post', id: ++midId, request: { type: 'info', payload: { type: 'allMids' } } });
   function sub() { const c = STOCKS[stock].hl; if (cur === c) return; if (cur) a.send({ method: 'unsubscribe', subscription: { type: 'bbo', coin: cur } }); if (a.send({ method: 'subscribe', subscription: { type: 'bbo', coin: c } })) { cur = c; askMid(); } }
   // The bbo stream is silent while the book does not move, so a quiet market would leave the line empty.
   setInterval(() => { if (!document.hidden) askMid(); }, 2000);
@@ -458,7 +457,7 @@ async function initBurner() {
     let pk = null; try { pk = localStorage.getItem('perp-race-burner'); } catch {}
     if (!pk) { pk = m.generatePrivateKey(); try { localStorage.setItem('perp-race-burner', pk); } catch {} }
     burner.acct = m.privateKeyToAccount(pk); dream.openSend();
-    for (let i = 0; i < 4; i++) await burner.acct.signTransaction({ chainId: 50383, type: 'eip1559', nonce: i, to: burner.acct.address, value: 0n, gas: 30000n, maxFeePerGas: 1n, maxPriorityFeePerGas: 0n }); // warm-up only, never sent
+    for (let i = 0; i < 4; i++) await burner.acct.signTransaction({ chainId: 50321, type: 'eip1559', nonce: i, to: burner.acct.address, value: 0n, gas: 30000n, maxFeePerGas: 1n, maxPriorityFeePerGas: 0n }); // warm-up only, never sent
     refreshBurner(); setInterval(refreshBurner, 8000);
   } catch (e) { burner.err = e.message; }
   paintBurner();
@@ -484,7 +483,7 @@ function paintBurner() {
 }
 async function realTx() {
   const a = burner.acct, nonce = burner.nonce++;
-  const raw = await a.signTransaction({ chainId: 50383, type: 'eip1559', nonce, to: a.address, value: 0n, gas: 30000n, maxFeePerGas: burner.gas * 2n, maxPriorityFeePerGas: 0n });
+  const raw = await a.signTransaction({ chainId: 50321, type: 'eip1559', nonce, to: a.address, value: 0n, gas: 30000n, maxFeePerGas: burner.gas * 2n, maxPriorityFeePerGas: 0n });
   return dream.sendRpc('eth_sendRawTransactionSync', [raw]);
 }
 
@@ -699,12 +698,12 @@ function recordRound(rd) {
 // Server mode: our own function fires real orders and reports what it measured from where it runs.
 async function measureServer(side) {
   racing = true; replay = null;
-  const size = Math.max(0, +$('#size').value || 0);
+  const size = 0;
   const rd = { t0: 0, side, stock, size, res: {}, blocks: {}, pxs: {}, S: 600, done: false, winner: null, server: true };
   $('#note').textContent = 'Orders are on their way...';
   const dry = /[?&]noreal\b/.test(location.search) ? '&real=0' : '';
-  let j; try { j = await (await fetch(`/api/race?stock=${stock}&side=${side}${dry}`, { cache: 'no-store' })).json(); } catch (e) { j = { error: e.message, venues: {} }; }
-  if (j.error === 'busy') { await sleep(4000); try { j = await (await fetch(`/api/race?stock=${stock}&side=${side}${dry}`, { cache: 'no-store' })).json(); } catch (e) { j = { error: e.message, venues: {} }; } }
+  let j; try { j = await (await fetch(`/api/race?market=${stock}&side=${side}${dry}`, { cache: 'no-store' })).json(); } catch (e) { j = { error: e.message, venues: {} }; }
+  if (j.error === 'busy') { await sleep(4000); try { j = await (await fetch(`/api/race?market=${stock}&side=${side}${dry}`, { cache: 'no-store' })).json(); } catch (e) { j = { error: e.message, venues: {} }; } }
   for (const v of VENUES) {
     const s = (j.venues || {})[v.id] || { error: j.error || 'no data' };
     rd.res[v.id] = { unlisted: !!s.unlisted, api: s.network, blk: s.floor, conf: s.confirmed, basis: s.basis, kind: s.kind, docsMs: s.docsMs, err: s.error, status: s.status, exec: s.execMicros, tx: s.tx, ack: s.ack, maker: s.maker, proof: s.proof };
@@ -716,7 +715,7 @@ async function measureServer(side) {
 async function measure(side) {
   if (server) return measureServer(side);
   racing = true; replay = null;
-  const size = Math.max(0, +$('#size').value || 0);
+  const size = 0;
   const rd = { t0: 0, side, stock, size, res: {}, blocks: {}, pxs: {}, S: 600, done: false, winner: null };
   for (const v of VENUES) rd.res[v.id] = {};
   $('#note').textContent = 'Firing...';
@@ -752,10 +751,7 @@ function countUp(el, to) {
   const t0 = now(), dur = 750;
   (function step() { const k = Math.min(1, (now() - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(to * e).toLocaleString('en-US'); if (k < 1) requestAnimationFrame(step); })();
 }
-function noteFor(rd) {
-  const pd = rd.pxs.dreamdex, px = pd && pd.length ? pd[pd.length - 1].p : null;
-  $('#note').textContent = `${rd.side.toUpperCase()} ${rd.size} ${rd.stock}${px ? ' ≈ $' + Math.round(rd.size * px).toLocaleString('en-US') : ''}`;
-}
+function noteFor(rd) { $('#note').textContent = `${rd.side.toUpperCase()} ${rd.stock}-PERP · about $11 per venue, priced so it cannot fill`; }
 // The official result: winner, then every runner with its time, margin, how it was measured and its proof.
 function reveal(rd) {
   const el = $('#verdict'), w = rd.winner && V[rd.winner];
@@ -816,7 +812,7 @@ fetch('/api/health', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).th
   for (let i = VENUES.length - 1; i >= 0; i--) { const v = VENUES[i], sv = h.venues && h.venues[v.id]; if (v.id !== 'dreamdex' && sv && sv.realOrders === false) { VENUES.splice(i, 1); for (const el of [v.lg.parentNode, v.row[0].parentNode]) el.remove(); const m = [...document.querySelectorAll('#method tr')].find(r => r.firstChild.textContent === v.name); if (m) m.remove(); } }
   { const n = VENUES.length; $('#pLive').innerHTML = `<b>·/${n}</b> venues live`; }
   const p = $('#pReal'); p.textContent = 'real orders · measured from ' + h.region; p.classList.add('on');
-  $('#kick').textContent = 'RWA stock perps · real orders · measured from Tokyo';
+  $('#kick').textContent = 'Crypto perps · real orders on mainnet · measured from Tokyo';
   setTimeout(paintServerWallet, 2500); setInterval(() => { if (!document.hidden && !racing) paintServerWallet(); }, 20000);
 }).catch(() => initBurner());
 window.__race = { VENUES, V, go, burner, realTx, get round() { return round; } };

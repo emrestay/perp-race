@@ -1,14 +1,14 @@
-// GET /api/race?stock=TSLA&side=short  → one race, measured from wherever this function runs.
+// GET /api/race?market=BTC&side=short  → one race, measured from wherever this function runs.
 // Real orders sit behind this endpoint, so it is deliberately stingy:
 //   - only the known parameters are accepted (anything else is a 400, so the cache cannot be dodged);
 //   - successful results are cached at the CDN for a few seconds, so a crowd shares one race;
 //   - inside one instance races run one at a time with a minimum gap, and a short queue.
 import { runRace } from '../lib/race.js';
-import { STOCKS } from '../lib/stocks.js';
+import { MARKETS as STOCKS } from '../lib/markets.js';
 import { sleep } from '../lib/util.js';
 
 const MIN_GAP_MS = 10000, CDN_TTL_S = 12, MAX_QUEUE = 2;
-const ALLOWED = new Set(['stock', 'side', 'real']);
+const ALLOWED = new Set(['market', 'side', 'real']);
 let chain = Promise.resolve(), lastAt = 0;
 const recent = new Map(), pending = new Map();
 const json = (body, status = 200, cdn = false) => new Response(JSON.stringify(body), {
@@ -32,7 +32,7 @@ function schedule(key, opts) {
 export async function GET(request) {
   const u = new URL(request.url);
   for (const k of u.searchParams.keys()) if (!ALLOWED.has(k)) return json({ error: 'unknown parameter' }, 400);
-  const stock = (u.searchParams.get('stock') || 'TSLA').toUpperCase(), sideRaw = u.searchParams.get('side') || 'short', real = u.searchParams.get('real');
+  const stock = (u.searchParams.get('market') || 'BTC').toUpperCase(), sideRaw = u.searchParams.get('side') || 'short', real = u.searchParams.get('real');
   if (!STOCKS[stock] || (sideRaw !== 'long' && sideRaw !== 'short') || (real !== null && real !== '0')) return json({ error: 'bad parameter' }, 400);
   if (real !== null && process.env.VERCEL_ENV === 'production') return json({ error: 'bad parameter' }, 400); // the test mode is not offered publicly
   const dry = real === '0';
@@ -44,7 +44,7 @@ export async function GET(request) {
     const r = await p, out = { ...r, venues: Object.fromEntries(Object.entries(r.venues).map(([k, v]) => { const { frame, ...rest } = v; return [k, rest]; })) }; // raw venue frames stay in the server log only
     if (dry) out.dry = true;
     if (!r.cached) // one line per race in the function log (timings, statuses and public ids only, never a secret)
-      console.log('race ' + JSON.stringify({ at: r.at, region: r.region, stock: r.stock, side: r.side, dry, winner: r.winner, attempts: r.attempts, lag: r.loopLagMs,
+      console.log('race ' + JSON.stringify({ at: r.at, region: r.region, market: r.stock, side: r.side, dry, winner: r.winner, attempts: r.attempts, lag: r.loopLagMs,
         venues: Object.fromEntries(Object.entries(r.venues).map(([k, v]) => [k, { network: v.network, ack: v.ack, confirmed: v.confirmed, basis: v.basis, kind: v.kind, status: v.status, maker: v.maker, error: v.error, proof: v.proof && v.proof.id, cancel: v.cancel, frame: v.frame && String(v.frame).slice(0, 200) }])) }));
     return json(out, 200, !dry);
   } catch (e) { return json({ error: e.message }, 500); }

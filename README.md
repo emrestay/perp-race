@@ -1,6 +1,6 @@
 # Perp Race
 
-A latency derby for perp DEXs, drawn as a pony race. Pick a stock, go long or short, and one real order leaves for every venue at the same instant. The first venue to confirm the order crosses the line.
+A latency derby for perp DEXs, drawn as a pony race. Pick a crypto perp, go long or short, and one real order leaves for every venue at the same instant. Every venue runs on mainnet. The first venue to confirm the order crosses the line.
 
 Live: https://perp-horse-race.vercel.app
 Code: https://github.com/emrestay/perp-race
@@ -16,8 +16,8 @@ The code is open so that anyone can check what is measured and run it themselves
 
 | Venue | Network | Order | Clock stops at | Proof |
 |---|---|---|---|---|
-| DreamDEX | Somnia Tokyo testnet | limit order via `eth_sendRawTransactionSync`, cancelled right after (untimed) | the transaction receipt | tx on the Somnia explorer |
-| Hyperliquid | mainnet, HIP-3 `xyz` dex | IOC order over the WebSocket `post` action | Hyperliquid's order response | tx on the Hyperliquid explorer |
+| DreamDEX | Somnia Tokyo mainnet | limit order via `eth_sendRawTransactionSync`, cancelled right after (untimed) | the transaction receipt | tx on the Somnia explorer |
+| Hyperliquid | mainnet | IOC order over the WebSocket `post` action | Hyperliquid's order response | tx on the Hyperliquid explorer |
 | Arcus | mainnet | IOC order over WebSocket `placeOrder` | final order state on the public `orders` stream | order id |
 | Lighter | mainnet | IOC order via REST `sendTx` | final order state on the `account_all_orders` stream | tx hash |
 | Aster | mainnet | IOC order via REST `/fapi/v3/order` | the REST response with the final status | order id |
@@ -27,8 +27,9 @@ Each round also times one small request on the same open connection (the "networ
 
 Known differences, stated on the page as well:
 
-- The DreamDEX leg runs on testnet with a resting limit order. The other venues get mainnet IOC orders.
-- RISEx does not list COIN or MRVL; on those stocks it sits the race out. A venue without credentials on the server is left out of the race.
+- Markets: BTC, ETH, SOL, HYPE, XRP, DOGE, BNB, ZEC, the crypto perps DreamDEX lists on mainnet that every other venue lists too (`lib/markets.js`).
+- The DreamDEX leg is a resting limit order (an IOC order with nothing to match reverts on chain); the other venues get IOC orders. All are priced away from the market: 3% (1.5% on Aster and RISEx, inside their price bands).
+- Order sizes are near each venue's minimum, mostly 6 to 19 USD; a computed size above 80 USD is refused (`MAX_NOTIONAL_USD`). A venue without credentials on the server is left out of the race.
 - The accounts are small, fresh accounts on public APIs. Lighter standard accounts carry a published 300 ms taker delay.
 - If the event loop stalls by more than 25 ms during a round, the round is run again (at most three attempts).
 - The replay on the page is slowed down and gives the first milliseconds more screen time; each horse reaches the line exactly at its venue's confirmation time and the clock shows real milliseconds.
@@ -36,11 +37,11 @@ Known differences, stated on the page as well:
 ## Layout
 
 ```
-api/race.js        GET /api/race?stock=TSLA&side=short  one race (rate limited, cached for 12 s)
+api/race.js        GET /api/race?market=BTC&side=short  one race (rate limited, cached for 12 s)
 api/health.js      GET /api/health                      which venues have credentials, never a secret
 lib/race.js        connect, warm, fire, settle, rank
 lib/<venue>.js     one adapter per venue (signing, order, final state, proof)
-lib/stocks.js      stock to market mapping for every venue
+lib/markets.js     market mapping for every venue, plus the size guard
 lib/lighter-signer Lighter's official Go signer compiled to WASM (see its README.txt)
 public/index.html  the page (vanilla JS, canvas)
 dev-server.mjs     local server that runs the same handlers
@@ -64,7 +65,7 @@ node scripts/secrets.mjs list
 node scripts/secrets.mjs set HL_AGENT_KEY
 ```
 
-The names are in `.env.example`. Every venue is optional; without a key a venue only reports network time. On a local or preview deployment, add `?noreal` to the page URL to send only the DreamDEX testnet order (production rejects it).
+The names are in `.env.example`. Every venue is optional; without a key a venue only reports network time. On a local or preview deployment, add `?noreal` to the page URL to send only the DreamDEX order (production rejects it).
 
 Never commit keys. Use API or agent keys that cannot withdraw, and keep only a few dollars on each account.
 

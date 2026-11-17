@@ -32,7 +32,7 @@ export async function GET(request) {
   const body = {
     ok: true, region: env.VERCEL_REGION || 'local',
     venues: {
-      dreamdex: { network: 'Somnia Tokyo testnet', burner: b.acct ? b.acct.address : null, ephemeral: b.ephemeral },
+      dreamdex: { network: 'Somnia Tokyo mainnet', burner: b.acct ? b.acct.address : null, ephemeral: b.ephemeral },
       hyperliquid: { realOrders: !!agent, keyPresent: !!env.HL_AGENT_KEY, agent: agent ? agent.address : null, network: env.HL_ENV === 'testnet' ? 'testnet' : 'mainnet' },
       arcus: { realOrders: !!ar.cred, apiKey: ar.cred ? ar.cred.apiKey : null, address: ar.cred ? ar.cred.address : null, accountIndex: ar.cred ? ar.cred.ai : null, keyError: ar.credError, network: env.ARCUS_ENV === 'testnet' ? 'testnet' : 'mainnet' },
       lighter: { realOrders: !!li.cred, accountIndex: li.cred ? li.cred.ai : null, apiKeyIndex: li.cred ? li.cred.ki : null, keyError: li.credError, network: 'mainnet' },
