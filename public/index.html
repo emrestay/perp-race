@@ -227,10 +227,9 @@ footer a{font-weight:600}
       <tbody id="method"></tbody>
     </table></div>
     <p>The replay is slowed down, and it gives the first milliseconds more screen time than the rest so that a fast finish is still visible. Each pony moves at a steady pace in real time and reaches the line exactly at its venue's confirmation time; the race clock always shows real milliseconds.</p>
-    <div class="burner" id="burner"></div>
   </details>
 
-  <footer><span>Built by Somnia DevRel. DreamDEX runs on Somnia, so read the method before you trust the scoreboard.</span><span><a id="src" href="https://github.com/emrestay/perp-race" target="_blank" rel="noopener">Source code on GitHub ↗</a> · Horses from <a href="https://github.com/SmoothBot/chain-derby" target="_blank" rel="noopener">Chain Derby</a> (MIT)</span></footer>
+  <footer><a id="src" href="https://github.com/emrestay/perp-race" target="_blank" rel="noopener">Source code on GitHub ↗</a></footer>
   <dialog id="rep"><h3 id="repT">Reply</h3><p class="rw">The record the venue sent back for this order, exactly as received (selected fields).</p><pre id="repB"></pre><p class="rw" id="repW"></p><form method="dialog"><button class="ghost">Close</button></form></dialog>
 </main>
 
@@ -841,14 +840,6 @@ async function go(side, n) {
 $('#long').onclick = () => go('long', 1);
 $('#short').onclick = () => go('short', 1);
 $('#x10').onclick = () => go(lastSide, 10);
-// In server mode the real DreamDEX transaction comes from the server's testnet wallet, so the
-// browser burner is not created at all and the panel reports the server wallet instead.
-async function paintServerWallet() {
-  const el = $('#burner'), a = server.venues.dreamdex.burner; if (!el) return;
-  if (!a) { el.innerHTML = '<b>DreamDEX real transactions: OFF.</b> The server has no testnet wallet configured.'; return; }
-  let bal = null; try { bal = Number(BigInt(await dream.rpc('eth_getBalance', [a, 'latest'])) / 10n ** 12n) / 1e6; } catch {}
-  el.innerHTML = `<b>DreamDEX real transactions: ${bal == null ? 'checking...' : bal > 0.01 ? 'ON' : 'OFF (wallet is empty)'}.</b> In this mode they are sent by our server, not by your browser, from a Somnia Tokyo testnet wallet.<br>Address: <b class="num">${a}</b>${bal == null ? '' : ` · Balance: <b class="num">${bal} STT</b>`}`;
-}
 function dropVenues(test) {
   for (let i = VENUES.length - 1; i >= 0; i--) { const v = VENUES[i]; if (!test(v)) continue; VENUES.splice(i, 1); for (const el of [v.lg.parentNode, v.row[0].parentNode]) el.remove(); const m = [...document.querySelectorAll('#method tr')].find(r => r.firstChild.textContent === v.name); if (m) m.remove(); }
 }
@@ -860,7 +851,6 @@ fetch('/api/health', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).th
   { const n = VENUES.length; $('#pLive').innerHTML = `<b>·/${n}</b> venues live`; }
   const p = $('#pReal'); p.textContent = 'real orders · measured from ' + h.region; p.classList.add('on');
   $('#kick').textContent = 'Crypto perps · real orders on mainnet · measured from Tokyo';
-  setTimeout(paintServerWallet, 2500); setInterval(() => { if (!document.hidden && !racing) paintServerWallet(); }, 20000);
 }).catch(() => { dropVenues(v => v.serverOnly); initBurner(); });
 window.__race = { VENUES, V, go, burner, realTx, get round() { return round; } };
 </script>
