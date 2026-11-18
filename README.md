@@ -84,4 +84,4 @@ vercel deploy
 
 MIT, see `LICENSE`.
 
-The horse, track and fence art in `public/derby/` comes from [Chain Derby](https://github.com/SmoothBot/chain-derby) by SmoothBot (MIT); see `public/derby/CREDITS.txt`.
+The horse, track and fence art in `public/derby/` comes from [Chain Derby](https://github.com/SmoothBot/chain-derby) by SmoothBot (MIT); see `public/derby/CREDITS.txt`. Each venue logo in `public/logos/` belongs to that venue and is used only to identify it (taken from each venue's own app icon).

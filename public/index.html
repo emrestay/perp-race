@@ -102,9 +102,11 @@ main{max-width:1160px;margin:0 auto;padding:0 16px 70px}
 .panel{background:var(--card);border-radius:22px;padding:16px 18px;box-shadow:0 4px 0 rgba(120,90,60,.1)}
 .ptitle{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 10px;font:700 22px var(--font)}
 .ptitle small{font:500 13px var(--font);color:var(--mute)}
-.tote div{display:grid;grid-template-columns:18px 1fr auto;gap:10px;align-items:center;padding:7px 2px;border-bottom:2px dashed var(--line)}
+.tote div{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:7px 2px;border-bottom:2px dashed var(--line)}
 .tote div:last-child{border-bottom:0}
 .tote i{width:14px;height:14px;border-radius:50%}
+.lg{width:20px;height:20px;border-radius:50%;object-fit:cover;background:#fff;box-shadow:0 0 0 2px var(--c,#eee);vertical-align:-5px;margin-right:8px;flex:none}
+.tote .lg{margin-right:0}
 .tote span{font:600 16px var(--font)}
 .tote b{font:700 17px var(--mono);transition:color .3s}
 .tote b.tick{color:#e0952b}
@@ -245,6 +247,7 @@ const FONT = '"Fredoka",ui-rounded,system-ui,sans-serif', MONO = '"JetBrains Mon
 const HL_DOC_MS = 200; // hyperliquid.gitbook.io/hyperliquid-docs/hypercore/overview: median end-to-end, co-located
 const LIGHTER_DOC_MS = 300; // docs.lighter.xyz/trading/trading-fees: taker latency, standard account
 let server = null; // set when this page is served with its /api (real orders, measured from the server)
+const ASSET = location.pathname.includes('/public/') ? '' : '/';
 
 const STOCKS = { // crypto perps listed on DreamDEX mainnet and on every other venue (see lib/markets.js)
   BTC: { pool: '0x143ebd385cc90bd178086a8f432c9084f889ef30', hl: 'BTC', arcus: 'BTC-USD', aster: 'btcusdt', lighter: 1, risex: 1, perpl: [1, 1] },
@@ -449,10 +452,11 @@ const listed = v => !(v.id in STOCKS[stock]) || STOCKS[stock][v.id] != null;
 const tote = $('#tote'), tbody = $('#tbody'), chips = $('#chips'), callEl = $('#call');
 VENUES.forEach((v, i) => {
   base(v); v.make(v); v.no = i + 1; v.ph = i * 1.3;
-  const d = document.createElement('div'); d.innerHTML = `<i style="background:${v.color}"></i><span>${v.name}</span><b class="num">·</b>`; tote.appendChild(d); v.lg = d.querySelector('b');
+  const d = document.createElement('div'); d.innerHTML = `<img class="lg" src="${ASSET}logos/${v.id}${v.id === 'perpl' ? '.svg' : '.png'}" alt="" style="--c:${v.color}"><span>${v.name}</span><b class="num">·</b>`; tote.appendChild(d); v.lg = d.querySelector('b');
   const mr = document.createElement('tr'); mr.innerHTML = `<td>${v.name}</td>` + v.m.map(c => `<td>${c}</td>`).join(''); $('#method').appendChild(mr);
-  const tr = document.createElement('tr'); tr.innerHTML = `<td><i style="background:${v.color}"></i>${v.name}</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="basis"></td>`; tbody.appendChild(tr); v.row = tr.children;
+  const tr = document.createElement('tr'); tr.innerHTML = `<td><img class="lg" src="${ASSET}logos/${v.id}${v.id === 'perpl' ? '.svg' : '.png'}" alt="" style="--c:${v.color}">${v.name}</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="basis"></td>`; tbody.appendChild(tr); v.row = tr.children;
 });
+loadLogos();
 const V = Object.fromEntries(VENUES.map(v => [v.id, v])), dream = V.dreamdex, hl = V.hyperliquid;
 for (const s of Object.keys(STOCKS)) { const b = document.createElement('button'); b.className = 'chip' + (s === stock ? ' on' : ''); b.textContent = s; b.onclick = () => setStock(s); chips.appendChild(b); }
 function setStock(s) {
@@ -550,6 +554,14 @@ function layout(w, h) {
   return { mob, top, bot, LH, s, CW, x0, xf, R };
 }
 // Horse, track and fence art from Chain Derby by SmoothBot (https://github.com/SmoothBot/chain-derby, MIT License).
+const LOGO = {}; // each venue's own app icon, used only to identify it (see public/logos/CREDITS.txt)
+function loadLogos() { for (const v of VENUES) { const im = new Image(); im.onload = () => { LOGO[v.id] = im; }; im.src = ASSET + 'logos/' + v.id + (v.id === 'perpl' ? '.svg' : '.png'); } }
+function logoCircle(x, v, cx, cy, r) { // draws the venue logo in a circle, or the colored letter until it loads
+  const im = LOGO[v.id];
+  if (!im) { x.beginPath(); x.arc(cx, cy, r, 0, 6.3); x.fillStyle = v.color; x.fill(); x.fillStyle = '#fff'; x.font = `700 ${Math.round(r * 0.85)}px ` + FONT; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(v.badge, cx, cy + r * 0.05); x.textAlign = 'left'; return; }
+  x.save(); x.beginPath(); x.arc(cx, cy, r, 0, 6.3); x.fillStyle = '#fff'; x.fill(); x.clip(); const pad = v.id === 'perpl' ? r * 0.45 : 0; x.drawImage(im, cx - r + pad, cy - r + pad, 2 * (r - pad), 2 * (r - pad)); x.restore();
+  x.beginPath(); x.arc(cx, cy, r, 0, 6.3); x.lineWidth = Math.max(1, r * 0.14); x.strokeStyle = '#fff'; x.stroke();
+}
 const ART = {}; for (const [k, f] of [['horse', 'horse-sprite.webp'], ['track', 'track.webp'], ['fence', 'fence.webp']]) { const im = new Image(); im.onload = () => { ART[k] = im; }; im.src = (location.pathname.includes('/public/') ? '' : '/') + 'derby/' + f; }
 // The sprite has 6 running frames side by side. gait 0 = standing (first frame), 1 = full gallop.
 function drawPony(x, cx, cy, s, v, ph, gait, t) {
@@ -558,9 +570,7 @@ function drawPony(x, cx, cy, s, v, ph, gait, t) {
   const bob = gait > 0.05 ? 0 : -0.8 * Math.abs(Math.sin(t / 600 + v.no)) * s;
   const left = cx + (NOSE * s) - w * 0.985, top = cy + 26 * s - h + bob; // nose and hooves line up with the vector pony
   x.drawImage(im, frame * fw, 0, fw, fh, left, top, w, h);
-  const bx = left + w * 0.44, by = top + h * 0.6, br = h * 0.085; // venue badge on the saddle cloth
-  x.beginPath(); x.arc(bx, by, br, 0, 6.3); x.fillStyle = v.color; x.fill(); x.lineWidth = Math.max(1, br * 0.18); x.strokeStyle = '#fff'; x.stroke();
-  x.fillStyle = '#fff'; x.font = `700 ${Math.round(br * 1.05)}px ` + FONT; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(v.badge, bx, by + br * 0.06); x.textAlign = 'left';
+  logoCircle(x, v, left + w * 0.44, top + h * 0.6, h * 0.1); // venue logo on the saddle cloth
 }
 // A cartoon pony drawn in code: used only until the sprite has loaded.
 function drawPonyVector(x, cx, cy, s, v, ph, gait, t) {
@@ -673,7 +683,7 @@ function drawTrack(t) {
     const ch = Math.min(L.LH - 12, L.mob ? 50 : 56), cty = y + (L.LH - ch) / 2;
     x.save(); x.shadowColor = 'rgba(74,44,23,.18)'; x.shadowOffsetY = 3; x.shadowBlur = 0; x.fillStyle = '#fffdf8'; rr(x, 6, cty, L.CW - 6, ch, 14); x.fill(); x.restore();
     const ic = L.mob ? 11 : 15, icx = 6 + 8 + ic, icy = cty + ch / 2;
-    x.beginPath(); x.arc(icx, icy, ic, 0, 6.3); x.fillStyle = v.color; x.fill(); x.fillStyle = '#fff'; x.font = `700 ${L.mob ? 10 : 12}px ` + FONT; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(v.badge, icx, icy + 0.5); x.textAlign = 'left';
+    logoCircle(x, v, icx, icy, ic);
     const tx = icx + ic + 8;
     x.fillStyle = '#3b2a1e'; x.font = `700 ${L.mob ? 12 : 16}px ` + FONT; x.textBaseline = 'alphabetic'; x.fillText(L.mob ? v.short : v.name, tx, icy - 2);
     if (place === 1) { const nw = x.measureText(L.mob ? v.short : v.name).width; if (!L.mob) { x.fillStyle = '#fff1c9'; rr(x, tx + nw + 6, icy - 15, 30, 16, 8); x.fill(); x.fillStyle = '#a57a12'; x.font = '700 11px ' + FONT; x.fillText('1st', tx + nw + 12, icy - 3); } }
@@ -797,7 +807,7 @@ function reveal(rd) {
   const row = (v, i, n) => { const r = rd.res[v.id], [cls, txt] = tagOf(r);
     const time = r.unlisted ? 'not listed' : r.conf != null ? (r.basis === 'docs' ? '≈ ' : '') + fms(r.conf) : r.api != null ? 'DNF' : 'no answer';
     const mg = n === 1 ? 'winner' : r.conf != null ? '+' + fms(r.conf - wc) : '·';
-    return `<li class="${n === 1 ? 'first' : ''}" style="--c:${v.color};--d:${(0.25 + i * 0.1).toFixed(2)}s"><span class="pos">${n ? RANK[n] : '·'}</span><span class="hn"><i></i><span>${v.name}<small>${esc(v.sub)}</small></span></span><span class="rt num">${time}</span><span class="mg">${mg}</span><span class="tg ${cls}"${r.err ? ` title="${esc(r.err)}"` : ''}>${r.unlisted ? 'not listed' : r.api == null ? 'no answer' : txt}</span>${proof(r, v)}</li>`; };
+    return `<li class="${n === 1 ? 'first' : ''}" style="--c:${v.color};--d:${(0.25 + i * 0.1).toFixed(2)}s"><span class="pos">${n ? RANK[n] : '·'}</span><span class="hn"><img class="lg" src="${ASSET}logos/${v.id}${v.id === 'perpl' ? '.svg' : '.png'}" alt=""><span>${v.name}<small>${esc(v.sub)}</small></span></span><span class="rt num">${time}</span><span class="mg">${mg}</span><span class="tg ${cls}"${r.err ? ` title="${esc(r.err)}"` : ''}>${r.unlisted ? 'not listed' : r.api == null ? 'no answer' : txt}</span>${proof(r, v)}</li>`; };
   const foot = rd.server ? (rd.cached ? 'This result was reused from a race moments ago.' : '')
     : rd.res.dreamdex.basis === 'real' ? 'Measured in your browser. A real transaction on DreamDEX testnet, estimates elsewhere.' : 'Measured in your browser. Nothing was signed or sent.';
   el.innerHTML = `<div class="result">${head}<div class="winner"><span class="cup">🏆</span><span class="nm" style="color:${w.color}">${w.name}</span><span class="tm"><b class="num" id="cnt">0</b><small>ms to confirm your ${esc(rd.side)}</small></span></div><ol class="board">${ranked.map((v, i) => row(v, i, i + 1)).join('')}${rest.map((v, i) => row(v, ranked.length + i, 0)).join('')}</ol>${foot ? `<p class="rfoot">${foot}</p>` : ''}</div>`;
