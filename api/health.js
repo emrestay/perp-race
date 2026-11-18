@@ -5,7 +5,7 @@ import { arcusCred } from '../lib/arcus.js';
 import { lighterCred, loadSigner } from '../lib/lighter.js';
 import { asterSigner, asterBalance } from '../lib/aster.js';
 import { risexCred } from '../lib/risex.js';
-import { perplCred } from '../lib/perpl.js';
+import { perplCred, perplCheck } from '../lib/perpl.js';
 
 // ?deep=1: ask RISEx whether the session key is registered and active for the account (a read, never an order).
 async function risexDeep(c) {
@@ -53,5 +53,6 @@ export async function GET(request) {
   if (deep && li.cred) body.venues.lighter.check = await lighterDeep(li.cred);
   if (deep && as) body.venues.aster.check = await asterBalance(env);
   if (deep && rx) body.venues.risex.check = await risexDeep(rx);
+  if (deep && pp.cred) body.venues.perpl.check = await perplCheck(env);
   return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 }
