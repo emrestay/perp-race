@@ -2,7 +2,7 @@
 
 A latency derby for perp DEXs, run as a horse race. Pick a crypto perp, go long or short, and one real order leaves for every venue at the same instant. Every venue runs on mainnet. The first venue to confirm the order crosses the line.
 
-Live: https://perp-horse-race.vercel.app
+Live: https://perp-race.vercel.app
 Code: https://github.com/emrestay/perp-race
 
 The code is open so that anyone can check what is measured and run it themselves.
